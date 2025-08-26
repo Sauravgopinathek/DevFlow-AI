@@ -1,0 +1,154 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== UNIFIED 4-COLOR PALETTE ===== */
+
+:root {
+  /* Light mode colors */
+  --primary: #2563eb;     /* blue-600 */
+  --secondary: #9333ea;   /* purple-500 */
+  --background: #ffffff;  /* white */
+  --foreground: #000000;  /* black */
+}
+
+.dark {
+  /* Dark mode colors */
+  --primary: #60a5fa;     /* blue-400 */
+  --secondary: #c084fc;   /* purple-300 */
+  --background: #111827;  /* gray-900 */
+  --foreground: #ffffff;  /* white */
+}
+
+/* ===== TAILWIND DARK MODE CONFIGURATION ===== */
+
+@layer base {
+  html {
+    @apply bg-white text-black dark:bg-gray-900 dark:text-white;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  body {
+    @apply bg-white text-black dark:bg-gray-900 dark:text-white;
+  }
+}
+
+/* ===== COMPONENT STYLES ===== */
+
+.bg-themed-primary {
+  @apply bg-white text-black dark:bg-gray-900 dark:text-white !important;
+}
+
+.bg-themed-secondary {
+  @apply bg-gray-50 text-gray-900 dark:bg-gray-700 dark:text-gray-100 !important;
+}
+
+.bg-themed-tertiary {
+  @apply bg-gray-100 dark:bg-gray-600 !important;
+}
+
+.text-themed-primary {
+  @apply text-black dark:text-white !important;
+}
+
+.text-themed-secondary {
+  @apply text-gray-600 dark:text-gray-300 !important;
+}
+
+.text-themed-tertiary {
+  @apply text-gray-500 dark:text-gray-400 !important;
+}
+
+.card-themed {
+  @apply bg-white text-black border border-gray-200 rounded-2xl p-6 shadow-lg dark:bg-gray-800 dark:text-white dark:border-gray-700 !important;
+}
+
+.border-themed {
+  @apply border-gray-200 dark:border-gray-700 !important;
+}
+
+/* Force override any remaining themed classes */
+.border-themed {
+  @apply border-gray-200 dark:border-gray-700 !important;
+}
+
+.bg-themed-secondary:hover {
+  @apply bg-gray-100 dark:bg-gray-600 !important;
+}
+
+.bg-themed-tertiary:hover {
+  @apply bg-gray-200 dark:bg-gray-500 !important;
+}
+
+/* ===== BUTTON STYLES ===== */
+
+.btn-cyber-primary {
+  @apply bg-blue-600 text-white border-0 px-6 py-3 rounded-xl font-bold transition-all duration-300 hover:bg-blue-700 hover:-translate-y-0.5 dark:bg-blue-400 dark:text-gray-900 dark:hover:bg-blue-300;
+}
+
+.btn-cyber-secondary {
+  @apply bg-transparent text-blue-600 border-2 border-blue-600 px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:bg-blue-600 hover:text-white dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-400 dark:hover:text-gray-900;
+}
+
+/* ===== ANIMATIONS ===== */
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scroll animations */
+.scroll-fade { opacity: 0; transition: opacity 0.8s ease-out; }
+.scroll-fade.visible { opacity: 1; }
+
+.scroll-scale { opacity: 0; transform: scale(0.8); transition: all 0.6s ease; }
+.scroll-scale.visible { opacity: 1; transform: scale(1); }
+
+.scroll-slide-left { opacity: 0; transform: translateX(-50px); transition: all 0.8s ease; }
+.scroll-slide-left.visible { opacity: 1; transform: translateX(0); }
+
+.scroll-slide-right { opacity: 0; transform: translateX(50px); transition: all 0.8s ease; }
+.scroll-slide-right.visible { opacity: 1; transform: translateX(0); }
+
+.scroll-pop { opacity: 0; transform: scale(0.5); transition: all 0.7s ease; }
+.scroll-pop.visible { opacity: 1; transform: scale(1); }
+
+.stagger-1 { transition-delay: 0.1s; }
+.stagger-2 { transition-delay: 0.2s; }
+.stagger-3 { transition-delay: 0.3s; }
+.stagger-4 { transition-delay: 0.4s; }
+
+/* ===== NOTIFICATIONS ===== */
+
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 16px 24px;
+  border-radius: 8px;
+  z-index: 1000;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notification.success { background-color: #10B981; color: white; }
+.notification.warning { background-color: #F59E0B; color: white; }
+.notification.error { background-color: #EF4444; color: white; }
+.notification.info { background-color: var(--primary); color: white; }
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
