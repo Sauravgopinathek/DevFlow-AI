@@ -15,7 +15,6 @@ DevFlow AI is a comprehensive developer productivity platform that showcases the
 🌓 **Adaptive Theming**: Smooth dark/light mode with persistent settings  
 📱 **Responsive Design**: Perfect experience across all devices  
 
-![DevFlow AI Dashboard](https://via.placeholder.com/800x400/6366f1/ffffff?text=DevFlow+AI+Dashboard)
 
 ## 🏆 **Hackathon Excellence**
 
@@ -173,13 +172,15 @@ REACT_APP_NAME=DevFlow AI
 
 ### **🎬 Launch Application**
 
-```bash
-# Option 1: Development mode (recommended)
-npm run dev
+> **⚠️ Important**: This website is not officially deployed. For local development, you need to run both frontend and backend servers simultaneously ,In kiro Ide
 
-# Option 2: Production mode
-npm run build
+**Development Setup (2 Terminals Required)**:
+```bash
+# Terminal 1: Start the backend server
 npm start
+
+# Terminal 2: Start the frontend development server  
+npm run dev
 ```
 
 **🌐 Access**: Open [http://localhost:3000](http://localhost:3000) this link opens when we run inside Kiro Ide 
