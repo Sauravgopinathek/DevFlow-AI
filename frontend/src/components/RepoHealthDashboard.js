@@ -6,6 +6,9 @@ const RepoHealthDashboard = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedRepo, setSelectedRepo] = useState(null);
+  const [sortBy, setSortBy] = useState('health');
+  const [filterBy, setFilterBy] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -89,11 +92,40 @@ const RepoHealthDashboard = ({ user }) => {
   };
 
   const getHealthColor = (score) => {
-    if (score >= 80) return 'text-green-600 bg-green-100';
-    if (score >= 60) return 'text-yellow-600 bg-yellow-100';
-    if (score >= 40) return 'text-orange-600 bg-orange-100';
-    return 'text-red-600 bg-red-100';
+    if (score >= 80) return 'health-excellent';
+    if (score >= 60) return 'health-good';
+    if (score >= 40) return 'health-fair';
+    return 'health-poor';
   };
+
+  const getHealthIcon = (score) => {
+    if (score >= 80) return '🟢';
+    if (score >= 60) return '🟡';
+    if (score >= 40) return '🟠';
+    return '🔴';
+  };
+
+  const filteredAndSortedRepos = repos
+    .filter(repo => {
+      const matchesSearch = repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (repo.description && repo.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      if (filterBy === 'all') return matchesSearch;
+      if (filterBy === 'no-readme') return matchesSearch && !repo.hasReadme;
+      if (filterBy === 'inactive') {
+        const daysSinceCommit = (new Date() - new Date(repo.lastCommitDate)) / (1000 * 60 * 60 * 24);
+        return matchesSearch && daysSinceCommit > 90;
+      }
+      if (filterBy === 'high-issues') return matchesSearch && repo.openIssues > 5;
+      return matchesSearch;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'health') return getHealthScore(b) - getHealthScore(a);
+      if (sortBy === 'stars') return b.stars - a.stars;
+      if (sortBy === 'updated') return new Date(b.lastCommitDate) - new Date(a.lastCommitDate);
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      return 0;
+    });
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -109,11 +141,19 @@ const RepoHealthDashboard = ({ user }) => {
 
   if (!user) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-lg">
-        <div className="text-center py-8">
-          <div className="text-4xl mb-4">🔗</div>
-          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">Connect GitHub Account</h3>
-          <p className="text-gray-600 dark:text-gray-400">Sign in with GitHub to view your repository health dashboard</p>
+      <div className="card-enhanced">
+        <div className="text-center py-12">
+          <div className="text-6xl mb-6 animate-bounce">🔗</div>
+          <h3 className="text-2xl font-bold gradient-text mb-4">Connect GitHub Account</h3>
+          <p className="text-gray-300 text-lg">Sign in with GitHub to view your repository health dashboard</p>
+          <div className="mt-8">
+            <div className="inline-flex items-center px-6 py-3 bg-gray-700 rounded-full text-gray-300">
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clipRule="evenodd" />
+              </svg>
+              GitHub Integration Required
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -121,10 +161,21 @@ const RepoHealthDashboard = ({ user }) => {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-lg">
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mr-3"></div>
-          <span className="text-gray-600 dark:text-gray-400">Loading repository health data...</span>
+      <div className="card-enhanced">
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="relative mb-6">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-600 border-t-gray-300"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-2xl">📊</div>
+            </div>
+          </div>
+          <h3 className="text-xl font-bold gradient-text mb-2">Analyzing Repository Health</h3>
+          <p className="text-gray-300 text-center">Fetching data from GitHub API...</p>
+          <div className="mt-4 flex space-x-2">
+            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+          </div>
         </div>
       </div>
     );
@@ -132,15 +183,20 @@ const RepoHealthDashboard = ({ user }) => {
 
   if (error) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-lg">
-        <div className="text-center py-8">
-          <div className="text-4xl mb-4">⚠️</div>
-          <h3 className="text-xl font-bold text-red-800 dark:text-red-400 mb-2">Error Loading Data</h3>
-          <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+      <div className="card-enhanced border-red-500/30">
+        <div className="text-center py-12">
+          <div className="text-6xl mb-6 animate-pulse">⚠️</div>
+          <h3 className="text-2xl font-bold gradient-text-warning mb-4">Error Loading Repository Data</h3>
+          <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 mb-6 max-w-md mx-auto">
+            <p className="text-red-300">{error}</p>
+          </div>
           <button
             onClick={fetchRepoHealth}
-            className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+            className="btn-danger"
           >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
             Try Again
           </button>
         </div>
@@ -149,39 +205,143 @@ const RepoHealthDashboard = ({ user }) => {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-lg">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 flex items-center">
-          📊 Repository Health Dashboard
-        </h3>
+    <div className="card-enhanced">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 space-y-4 lg:space-y-0">
+        <div>
+          <h3 className="text-3xl font-bold gradient-text flex items-center mb-2">
+            📊 Repository Health Dashboard
+          </h3>
+          <p className="text-gray-300">Monitor and improve your repository health scores</p>
+        </div>
         <button
           onClick={fetchRepoHealth}
-          className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-bold px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl relative overflow-hidden group"
+          className="btn-modern"
         >
-          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative flex items-center justify-center space-x-2">
-            <svg 
-              className="w-4 h-4 text-white transform group-hover:rotate-180 transition-transform duration-500" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            <span className="font-semibold">Refresh Health Data</span>
-          </div>
+          <svg 
+            className="w-5 h-5 mr-2 transform group-hover:rotate-180 transition-transform duration-500" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Refresh Data
         </button>
       </div>
 
-      {repos.length === 0 ? (
-        <div className="text-center py-8">
-          <div className="text-4xl mb-4">📁</div>
-          <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">No Repositories Found</h4>
-          <p className="text-gray-600 dark:text-gray-400">Create some repositories on GitHub to see health metrics here!</p>
+      {/* Controls */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {/* Search */}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search repositories..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="form-input-modern pl-10"
+          />
+          <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+
+        {/* Sort */}
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="form-input-modern"
+        >
+          <option value="health">Sort by Health Score</option>
+          <option value="stars">Sort by Stars</option>
+          <option value="updated">Sort by Last Updated</option>
+          <option value="name">Sort by Name</option>
+        </select>
+
+        {/* Filter */}
+        <select
+          value={filterBy}
+          onChange={(e) => setFilterBy(e.target.value)}
+          className="form-input-modern"
+        >
+          <option value="all">All Repositories</option>
+          <option value="no-readme">Missing README</option>
+          <option value="inactive">Inactive (90+ days)</option>
+          <option value="high-issues">High Issues (5+)</option>
+        </select>
+      </div>
+
+      {/* Summary Stats */}
+      {repos.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="stats-card-success">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-400">
+                {repos.filter(repo => getHealthScore(repo) >= 80).length}
+              </div>
+              <div className="text-sm text-green-300">Excellent Health</div>
+            </div>
+          </div>
+          <div className="stats-card">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-400">
+                {repos.filter(repo => getHealthScore(repo) >= 60 && getHealthScore(repo) < 80).length}
+              </div>
+              <div className="text-sm text-blue-300">Good Health</div>
+            </div>
+          </div>
+          <div className="stats-card-warning">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-yellow-400">
+                {repos.filter(repo => getHealthScore(repo) >= 40 && getHealthScore(repo) < 60).length}
+              </div>
+              <div className="text-sm text-yellow-300">Needs Attention</div>
+            </div>
+          </div>
+          <div className="stats-card-danger">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-400">
+                {repos.filter(repo => getHealthScore(repo) < 40).length}
+              </div>
+              <div className="text-sm text-red-300">Poor Health</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {filteredAndSortedRepos.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-6">
+            {repos.length === 0 ? '📁' : '🔍'}
+          </div>
+          <h4 className="text-2xl font-bold gradient-text mb-4">
+            {repos.length === 0 ? 'No Repositories Found' : 'No Matching Repositories'}
+          </h4>
+          <p className="text-gray-300 text-lg">
+            {repos.length === 0 
+              ? 'Create some repositories on GitHub to see health metrics here!' 
+              : 'Try adjusting your search or filter criteria.'
+            }
+          </p>
+          {repos.length === 0 && (
+            <div className="mt-8">
+              <a
+                href="https://github.com/new"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-success"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Create New Repository
+              </a>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
-          {repos.map((repo) => {
+          {filteredAndSortedRepos.map((repo) => {
             const healthScore = getHealthScore(repo);
             const healthColor = getHealthColor(healthScore);
             const recommendations = getHealthRecommendations(repo);
@@ -189,61 +349,72 @@ const RepoHealthDashboard = ({ user }) => {
             return (
               <div
                 key={repo.id}
-                className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-500 transition-all duration-300 p-6 shadow-lg hover:shadow-xl"
+                className="card-enhanced hover:scale-[1.02] transition-all duration-300"
               >
-                <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start justify-between mb-6">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h4 className="text-xl font-bold text-gray-800 dark:text-gray-200">{repo.name}</h4>
-                      <span className={`px-3 py-1 rounded-full text-sm font-bold ${healthColor}`}>
-                        {healthScore}% Health
+                    <div className="flex items-center space-x-3 mb-3">
+                      <h4 className="text-xl font-bold text-white">{repo.name}</h4>
+                      <span className={`px-4 py-2 rounded-full text-sm font-bold flex items-center space-x-2 ${healthColor}`}>
+                        <span>{getHealthIcon(healthScore)}</span>
+                        <span>{healthScore}%</span>
                       </span>
                       {repo.private && (
-                        <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-full">
-                          🔒 Private
+                        <span className="px-3 py-1 bg-gray-700 text-gray-300 text-xs rounded-full flex items-center space-x-1">
+                          <span>🔒</span>
+                          <span>Private</span>
                         </span>
                       )}
                       {!repo.hasReadme && (
-                        <span className="px-2 py-1 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-xs rounded-full">
-                          📝 No README
+                        <span className="px-3 py-1 bg-red-900/30 border border-red-500/30 text-red-300 text-xs rounded-full flex items-center space-x-1">
+                          <span>📝</span>
+                          <span>No README</span>
                         </span>
                       )}
                     </div>
                     {repo.description && (
-                      <p className="text-gray-600 dark:text-gray-400 mb-3">{repo.description}</p>
+                      <p className="text-gray-300 mb-4 leading-relaxed">{repo.description}</p>
                     )}
-                    <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center space-x-6 text-sm text-gray-400">
                       {repo.language && (
-                        <span className="flex items-center">
-                          <div className="w-3 h-3 bg-blue-500 rounded-full mr-1"></div>
-                          {repo.language}
+                        <span className="flex items-center space-x-2">
+                          <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                          <span>{repo.language}</span>
                         </span>
                       )}
-                      <span>Updated {formatDate(repo.lastCommitDate)}</span>
+                      <span className="flex items-center space-x-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Updated {formatDate(repo.lastCommitDate)}</span>
+                      </span>
                       {repo.hasReadme && (
-                        <span className="text-green-600 dark:text-green-400">📄 README</span>
+                        <span className="flex items-center space-x-1 text-green-400">
+                          <span>📄</span>
+                          <span>README</span>
+                        </span>
                       )}
                     </div>
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-3 ml-4">
                     <a
                       href={repo.htmlUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors"
+                      className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors group"
                       title="View on GitHub"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-gray-300 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                     </a>
                     {!repo.hasReadme && (
                       <button
                         onClick={() => setSelectedRepo(repo)}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                        className="p-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors group"
                         title="Generate README"
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                         </svg>
                       </button>
@@ -252,37 +423,57 @@ const RepoHealthDashboard = ({ user }) => {
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{repo.stars}</div>
-                    <div className="text-sm text-blue-800 dark:text-blue-300">⭐ Stars</div>
+                  <div className="stats-card text-center">
+                    <div className="text-2xl font-bold text-blue-400 mb-1">{repo.stars}</div>
+                    <div className="text-sm text-blue-300 flex items-center justify-center space-x-1">
+                      <span>⭐</span>
+                      <span>Stars</span>
+                    </div>
                   </div>
-                  <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">{repo.forks}</div>
-                    <div className="text-sm text-green-800 dark:text-green-300">🍴 Forks</div>
+                  <div className="stats-card text-center">
+                    <div className="text-2xl font-bold text-green-400 mb-1">{repo.forks}</div>
+                    <div className="text-sm text-green-300 flex items-center justify-center space-x-1">
+                      <span>🍴</span>
+                      <span>Forks</span>
+                    </div>
                   </div>
-                  <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{repo.openIssues}</div>
-                    <div className="text-sm text-yellow-800 dark:text-yellow-300">🐛 Open Issues</div>
+                  <div className="stats-card text-center">
+                    <div className="text-2xl font-bold text-yellow-400 mb-1">{repo.openIssues}</div>
+                    <div className="text-sm text-yellow-300 flex items-center justify-center space-x-1">
+                      <span>🐛</span>
+                      <span>Open Issues</span>
+                    </div>
                   </div>
-                  <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{repo.closedIssues}</div>
-                    <div className="text-sm text-purple-800 dark:text-purple-300">✅ Closed Issues</div>
+                  <div className="stats-card text-center">
+                    <div className="text-2xl font-bold text-purple-400 mb-1">{repo.closedIssues}</div>
+                    <div className="text-sm text-purple-300 flex items-center justify-center space-x-1">
+                      <span>✅</span>
+                      <span>Closed Issues</span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Health Recommendations */}
                 {recommendations.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                    <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">💡 Recommendations</h5>
-                    <div className="space-y-2">
+                  <div className="mt-6 pt-6 border-t border-gray-700">
+                    <h5 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+                      <span>💡</span>
+                      <span>Health Recommendations</span>
+                    </h5>
+                    <div className="space-y-3">
                       {recommendations.slice(0, 3).map((rec, index) => (
-                        <div key={index} className={`flex items-center space-x-2 text-xs p-2 rounded-lg ${
-                          rec.type === 'critical' ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' :
-                          rec.type === 'warning' ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300' :
-                          'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                        <div key={index} className={`flex items-center space-x-3 text-sm p-3 rounded-xl border ${
+                          rec.type === 'critical' ? 'bg-red-900/20 border-red-500/30 text-red-300' :
+                          rec.type === 'warning' ? 'bg-yellow-900/20 border-yellow-500/30 text-yellow-300' :
+                          'bg-blue-900/20 border-blue-500/30 text-blue-300'
                         }`}>
-                          <span>{rec.icon}</span>
-                          <span>{rec.text}</span>
+                          <span className="text-lg">{rec.icon}</span>
+                          <span className="flex-1">{rec.text}</span>
+                          {rec.type === 'critical' && (
+                            <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">
+                              Critical
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -291,23 +482,28 @@ const RepoHealthDashboard = ({ user }) => {
 
                 {/* Contributors */}
                 {repo.contributors && repo.contributors.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                  <div className="mt-6 pt-6 border-t border-gray-700">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        👥 Active Contributors ({repo.contributors.length})
+                      <span className="text-lg font-semibold text-white flex items-center space-x-2">
+                        <span>👥</span>
+                        <span>Active Contributors ({repo.contributors.length})</span>
                       </span>
-                      <div className="flex -space-x-2">
+                      <div className="flex -space-x-3">
                         {repo.contributors.slice(0, 5).map((contributor, index) => (
-                          <img
-                            key={contributor.id}
-                            src={contributor.avatar_url}
-                            alt={contributor.login}
-                            className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800 shadow-sm"
-                            title={contributor.login}
-                          />
+                          <div key={contributor.id} className="relative group">
+                            <img
+                              src={contributor.avatar_url}
+                              alt={contributor.login}
+                              className="w-10 h-10 rounded-full border-3 border-gray-700 shadow-lg hover:border-gray-500 transition-all duration-300 hover:scale-110"
+                              title={contributor.login}
+                            />
+                            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                              {contributor.login}
+                            </div>
+                          </div>
                         ))}
                         {repo.contributors.length > 5 && (
-                          <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300">
+                          <div className="w-10 h-10 rounded-full bg-gray-700 border-3 border-gray-600 flex items-center justify-center text-xs font-bold text-gray-300 hover:bg-gray-600 transition-colors duration-300">
                             +{repo.contributors.length - 5}
                           </div>
                         )}

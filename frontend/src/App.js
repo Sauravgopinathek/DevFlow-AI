@@ -13,7 +13,6 @@ import Profile from './pages/Profile';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import UserSettings from './components/UserSettings';
-import ThemeToggle from './components/ThemeToggle';
 import NotificationManager from './components/NotificationManager';
 import ProtectedRoute from './components/ProtectedRoute';
 import BackgroundDemo from './components/BackgroundDemo';
@@ -23,7 +22,7 @@ function App() {
     <AuthProvider>
       <SettingsProvider>
         <Router>
-          <div className="min-h-screen bg-white dark:bg-gray-900">
+          <div className="min-h-screen bg-gray-900 text-white">
             <Navbar />
             <Routes>
               <Route path="/" element={<Home />} />
@@ -54,7 +53,7 @@ function App() {
                 path="/settings" 
                 element={
                   <ProtectedRoute>
-                    <div className="min-h-screen bg-gray-50 dark:bg-gray-800 py-8">
+                    <div className="min-h-screen bg-gray-900 py-8">
                       <div className="max-w-4xl mx-auto px-4 space-y-8">
                         <UserSettings />
                       </div>
@@ -63,7 +62,6 @@ function App() {
                 } 
               />
             </Routes>
-            <ThemeToggle />
             <NotificationManager />
           </div>
         </Router>

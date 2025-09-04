@@ -1,0 +1,21 @@
+{
+  "name": "Test and Lint on Save",
+  "description": "Automatically run tests and linting when JavaScript files are saved",
+  "trigger": {
+    "type": "file_save",
+    "pattern": "**/*.{js,jsx,ts,tsx}"
+  },
+  "actions": [
+    {
+      "type": "shell_command",
+      "command": "npm test -- --watchAll=false --passWithNoTests",
+      "workingDirectory": "frontend"
+    },
+    {
+      "type": "shell_command", 
+      "command": "npm run lint",
+      "workingDirectory": "frontend"
+    }
+  ],
+  "enabled": true
+}

@@ -1,0 +1,23 @@
+{
+  "name": "🏆 Hackathon Submission Checker",
+  "description": "Verify all hackathon requirements are met before submission",
+  "trigger": {
+    "type": "manual",
+    "button_text": "🏆 Check Submission Readiness"
+  },
+  "actions": [
+    {
+      "type": "ai_task",
+      "prompt": "Review the DevFlow AI project for hackathon submission readiness. Check: 1) .kiro directory completeness and quality, 2) README professional presentation, 3) Working application features, 4) Documentation clarity and comprehensiveness, 5) Kiro integration evidence and innovation. Provide a detailed submission checklist with scores.",
+      "files": [
+        "README.md",
+        "HACKATHON_SUBMISSION.md",
+        ".kiro/**/*",
+        "frontend/src/**/*.js",
+        "backend/**/*.js",
+        "package.json"
+      ]
+    }
+  ],
+  "enabled": true
+}

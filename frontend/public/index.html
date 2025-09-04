@@ -9,49 +9,41 @@
   <meta name="description" content="DevFlow AI - Automate your developer workflows" />
   <title>DevFlow AI</title>
 
-  <!-- Theme Initialization Script - Prevents Flash of Wrong Theme -->
+  <!-- Theme Initialization Script - Prevents Flash -->
   <script>
     (function () {
       try {
-        // Get theme from localStorage immediately
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('devflow-theme');
         const settings = localStorage.getItem('devflow-settings');
-        let theme = 'light'; // Default theme
-
-        if (settings) {
-          const parsed = JSON.parse(settings);
-          theme = parsed.preferences?.theme || 'light';
+        
+        let theme = 'light'; // Default
+        
+        // Priority: direct theme storage > settings > default
+        if (savedTheme) {
+          theme = savedTheme;
+        } else if (settings) {
+          try {
+            const parsed = JSON.parse(settings);
+            theme = parsed.preferences?.theme || 'light';
+          } catch (e) {
+            theme = 'light';
+          }
         }
 
-        console.log('🚀 Pre-loading theme:', theme);
-
-        // Apply theme class immediately to prevent flash
-        const root = document.documentElement;
-        const body = document.body;
-
-        // Remove any existing theme classes
-        root.classList.remove('theme-light', 'theme-dark', 'theme-auto');
-
-        // Set initial background color immediately
-        let isDark = false;
-
-        if (theme === 'auto') {
-          isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const themeClass = isDark ? 'theme-dark' : 'theme-light';
-          root.classList.add('theme-auto', themeClass);
+        // Apply Tailwind dark class immediately
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
         } else {
-          isDark = theme === 'dark';
-          root.classList.add('theme-' + theme);
+          document.documentElement.classList.remove('dark');
         }
 
-        // Set background color immediately to prevent flash
-        body.style.backgroundColor = isDark ? '#0A0A0F' : '#FFFFFF';
-        body.style.color = isDark ? '#FFFFFF' : '#212121';
-
-        console.log('✅ Pre-loaded theme applied:', theme);
+        // Save theme for consistency
+        localStorage.setItem('devflow-theme', theme);
+        
+        console.log('Theme initialized:', theme);
       } catch (error) {
-        console.error('Theme pre-loading failed:', error);
-        // Fallback to light theme
-        document.documentElement.classList.add('theme-light');
+        console.error('Theme init error:', error);
       }
     })();
   </script>
