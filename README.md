@@ -182,7 +182,7 @@ npm run build
 npm start
 ```
 
-**🌐 Access**: Open [http://localhost:3000](http://localhost:3000)
+**🌐 Access**: Open [http://localhost:3000](http://localhost:3000) this link opens when we run inside Kiro Ide 
 
 ### **🐳 Docker Alternative**
 
