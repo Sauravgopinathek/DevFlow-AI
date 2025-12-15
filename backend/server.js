@@ -28,25 +28,37 @@ if (process.env.MONGODB_URI) {
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Trust proxy for Render/Heroku (needed for secure cookies)
+app.set('trust proxy', 1);
 
 app.use(express.json());
 
 // Session configuration
-app.use(session({
-  secret: process.env.SESSION_SECRET,
+const sessionConfig = {
+  secret: process.env.SESSION_SECRET || 'fallback-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI
-  }),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
-}));
+};
+
+// Only use MongoDB session store if MONGODB_URI is provided
+if (process.env.MONGODB_URI) {
+  sessionConfig.store = MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI
+  });
+}
+
+app.use(session(sessionConfig));
 
 // Passport middleware
 app.use(passport.initialize());

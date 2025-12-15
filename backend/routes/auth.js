@@ -6,7 +6,8 @@ const router = express.Router();
 router.get('/github', (req, res, next) => {
   // Force GitHub to show account selection by adding a random state parameter
   const state = Math.random().toString(36).substring(7);
-  const authURL = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent('http://localhost:5000/auth/github/callback')}&scope=user:email,repo,read:org&state=${state}&allow_signup=true`;
+  const backendURL = process.env.BACKEND_URL || 'http://localhost:5000';
+  const authURL = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(`${backendURL}/auth/github/callback`)}&scope=user:email,repo,read:org&state=${state}&allow_signup=true`;
   res.redirect(authURL);
 });
 

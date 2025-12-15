@@ -6,12 +6,15 @@ const User = require('../models/User');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
-
+// Build callback URL - use BACKEND_URL in production, relative path in development
+const callbackURL = process.env.BACKEND_URL 
+    ? `${process.env.BACKEND_URL}/auth/github/callback`
+    : "/auth/github/callback";
 
 passport.use(new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: "/auth/github/callback"
+    callbackURL: callbackURL
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         const email = profile.emails?.[0]?.value;
