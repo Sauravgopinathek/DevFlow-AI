@@ -1,0 +1,16 @@
+{
+  "name": "Design Consistency Check",
+  "description": "Automatically check and suggest improvements for design consistency when CSS files are modified",
+  "trigger": {
+    "type": "file_save",
+    "pattern": "**/*.{css,scss,js,jsx}"
+  },
+  "actions": [
+    {
+      "type": "ai_task",
+      "prompt": "Review the modified file for design consistency. Check for: 1) Proper use of gradient colors (purple-pink-blue scheme), 2) Consistent spacing and typography, 3) Accessibility compliance, 4) Responsive design patterns. Suggest improvements if needed.",
+      "files": ["frontend/src/index.css", "frontend/src/**/*.js"]
+    }
+  ],
+  "enabled": true
+}

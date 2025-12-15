@@ -1,0 +1,24 @@
+[build]
+  # Directory to publish (build output)
+  publish = "build"
+  # Build command
+  command = "npm run build"
+
+# Redirects for React Router (SPA)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+
+# Environment variables placeholder
+[build.environment]
+  CI = "false"
+  NODE_VERSION = "18"

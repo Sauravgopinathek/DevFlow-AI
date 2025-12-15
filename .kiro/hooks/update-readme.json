@@ -1,0 +1,16 @@
+{
+  "name": "Update Documentation",
+  "description": "Automatically update README and documentation when new features are added",
+  "trigger": {
+    "type": "manual",
+    "button_text": "📚 Update Docs"
+  },
+  "actions": [
+    {
+      "type": "ai_task",
+      "prompt": "Review the recent changes in the codebase and update the README.md file to reflect any new features, API endpoints, or configuration changes. Maintain the existing structure and style.",
+      "files": ["README.md", "frontend/src/**/*.js", "backend/routes/**/*.js"]
+    }
+  ],
+  "enabled": true
+}

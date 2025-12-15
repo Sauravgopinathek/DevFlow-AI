@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="DevFlow AI - Automate your developer workflows" />
+  <title>DevFlow AI</title>
+
+  <!-- Theme Initialization Script - Prevents Flash -->
+  <script>
+    (function () {
+      try {
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('devflow-theme');
+        const settings = localStorage.getItem('devflow-settings');
+        
+        let theme = 'light'; // Default
+        
+        // Priority: direct theme storage > settings > default
+        if (savedTheme) {
+          theme = savedTheme;
+        } else if (settings) {
+          try {
+            const parsed = JSON.parse(settings);
+            theme = parsed.preferences?.theme || 'light';
+          } catch (e) {
+            theme = 'light';
+          }
+        }
+
+        // Apply Tailwind dark class immediately
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+
+        // Save theme for consistency
+        localStorage.setItem('devflow-theme', theme);
+        
+        console.log('Theme initialized:', theme);
+      } catch (error) {
+        console.error('Theme init error:', error);
+      }
+    })();
+  </script>
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+</body>
+
+</html>
