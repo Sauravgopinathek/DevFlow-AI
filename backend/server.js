@@ -52,10 +52,19 @@ const sessionConfig = {
 };
 
 // Only use MongoDB session store if MONGODB_URI is provided
+// Only use MongoDB session store if connection succeeds
+let mongoConnected = false;
+
 if (process.env.MONGODB_URI) {
-  sessionConfig.store = MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI
-  });
+  try {
+    sessionConfig.store = MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI,
+      touchAfter: 24 * 3600 // lazy update session
+    });
+    mongoConnected = true;
+  } catch (err) {
+    console.warn('MongoStore creation failed, using memory store');
+  }
 }
 
 app.use(session(sessionConfig));
