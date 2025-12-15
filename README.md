@@ -6,6 +6,16 @@
 
 DevFlow AI is a comprehensive developer productivity platform that showcases the transformative power of Kiro's AI-assisted development. Built entirely through conversational programming, spec-driven development, and automated workflows, this project demonstrates how AI can revolutionize the entire software development lifecycle.
 
+## 🌐 **Live Deployment**
+
+| Service | URL | Platform |
+|---------|-----|----------|
+| 🎨 **Frontend** | [https://snazzy-bombolone-898bef.netlify.app](https://snazzy-bombolone-898bef.netlify.app) | Netlify |
+| 🔧 **Backend API** | [https://devflow-ai-1.onrender.com](https://devflow-ai-1.onrender.com) | Render |
+| 🗄️ **Database** | MongoDB Atlas | Cloud |
+
+> **Try it now!** Click the frontend link and sign in with your GitHub account.
+
 ## ✨ **Live Demo Features**
 
 🎨 **Modern UI**: Beautiful gradient backgrounds with animated floating elements  
@@ -172,27 +182,80 @@ REACT_APP_NAME=DevFlow AI
 
 ### **🎬 Launch Application**
 
-> **⚠️ Important**: This website is not officially deployed. For local development, you need to run both frontend and backend servers simultaneously ,In kiro Ide
+#### **🌐 Production Deployment**
+
+The application is live and deployed:
+- **Frontend**: https://snazzy-bombolone-898bef.netlify.app
+- **Backend**: https://devflow-ai-1.onrender.com
+
+Simply visit the frontend URL and click "Connect with GitHub" to get started!
+
+#### **💻 Local Development (Optional)**
 
 **Development Setup (2 Terminals Required)**:
 ```bash
 # Terminal 1: Start the backend server
-npm start
+cd backend && npm run dev
 
 # Terminal 2: Start the frontend development server  
-npm run dev
+cd frontend && npm start
 ```
 
-**🌐 Access**: Open [http://localhost:3000](http://localhost:3000) this link opens when we run inside Kiro Ide 
+**🌐 Access**: Open [http://localhost:3000](http://localhost:3000)
 
-### **🐳 Docker Alternative**
+### **🚀 Production Deployment Guide**
 
-```bash
-# One-command deployment
-docker-compose up -d
+<details>
+<summary><strong>📋 Deploy Your Own Instance</strong></summary>
 
-# Access at http://localhost:3000
-```
+#### **Backend (Render)**
+1. Create account on [render.com](https://render.com)
+2. New → Web Service → Connect GitHub repo
+3. Configure:
+   - **Root Directory**: `backend`
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+4. Add Environment Variables:
+   ```
+   NODE_ENV=production
+   MONGODB_URI=your_mongodb_connection_string
+   GITHUB_CLIENT_ID=your_github_client_id
+   GITHUB_CLIENT_SECRET=your_github_client_secret
+   SESSION_SECRET=your_random_secret
+   FRONTEND_URL=your_netlify_url
+   BACKEND_URL=your_render_url
+   ```
+5. Deploy!
+
+#### **Frontend (Netlify)**
+1. Create account on [netlify.com](https://netlify.com)
+2. Add new site → Import from GitHub
+3. Configure:
+   - **Base Directory**: `frontend`
+   - **Build Command**: `npm run build`
+   - **Publish Directory**: `frontend/build`
+4. Add Environment Variables:
+   ```
+   REACT_APP_API_URL=your_render_backend_url
+   CI=false
+   ```
+5. Deploy!
+
+#### **Database (MongoDB Atlas)**
+1. Create account on [mongodb.com/atlas](https://mongodb.com/atlas)
+2. Create free cluster (M0)
+3. Create database user
+4. Network Access → Allow from anywhere (0.0.0.0/0)
+5. Connect → Drivers → Copy connection string
+
+#### **GitHub OAuth App**
+1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
+2. New OAuth App:
+   - **Homepage URL**: Your Netlify URL
+   - **Callback URL**: `https://your-render-url/auth/github/callback`
+3. Copy Client ID & Secret
+
+</details>
 
 ## 📡 **API Reference**
 
@@ -280,6 +343,28 @@ git push origin feature/amazing-feature
 ## 📞 **Support**
 
 **Issues?** Check [Issues](../../issues) or create a new one!
+
+---
+
+## 🔧 **Environment Variables Reference**
+
+### Backend (.env)
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `NODE_ENV` | Environment mode | `production` |
+| `PORT` | Server port | `5000` |
+| `MONGODB_URI` | MongoDB connection string | `mongodb+srv://...` |
+| `GITHUB_CLIENT_ID` | GitHub OAuth App ID | `Ov23li...` |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth Secret | `2f462a...` |
+| `SESSION_SECRET` | Session encryption key | `random-string` |
+| `FRONTEND_URL` | Frontend URL | `https://....netlify.app` |
+| `BACKEND_URL` | Backend URL | `https://....onrender.com` |
+
+### Frontend (.env)
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `REACT_APP_API_URL` | Backend API URL | `https://....onrender.com` |
+| `CI` | Disable CI strict mode | `false` |
 
 ---
 
