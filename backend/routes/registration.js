@@ -4,6 +4,7 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const emailService = require('../services/emailService');
+const { trackEvent } = require('../middleware/analytics');
 
 // Register a new user with email/password
 router.post('/register', async (req, res) => {
@@ -55,6 +56,13 @@ router.post('/register', async (req, res) => {
     });
 
     await user.save();
+
+    // Track registration event
+    trackEvent(req, 'registration', {
+      userId: user._id,
+      username: user.username,
+      email: user.email
+    }).catch(err => console.error('Failed to track registration:', err));
 
     // Optionally send welcome email (non-blocking)
     emailService.sendWelcomeEmail(email, username).catch(err => {
@@ -203,6 +211,13 @@ router.post('/login', async (req, res) => {
         console.error('Login error:', err);
         return res.status(500).json({ error: 'Login failed' });
       }
+
+      // Track login event
+      trackEvent(req, 'login', {
+        userId: user._id,
+        username: user.username,
+        email: user.email
+      }).catch(err => console.error('Failed to track login:', err));
 
       res.json({
         message: 'Login successful',
