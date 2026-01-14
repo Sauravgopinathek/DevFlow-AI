@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import DevFlowLogo from './DevFlowLogo';
 
 const Navbar = () => {
-  const { user, login, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef(null);
