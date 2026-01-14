@@ -11,6 +11,10 @@ const callbackURL = process.env.BACKEND_URL
     ? `${process.env.BACKEND_URL}/auth/github/callback`
     : "/auth/github/callback";
 
+// ✅ OPEN ACCESS POLICY: Any GitHub user can sign in without approval
+// - No whitelist restrictions
+// - All users are auto-approved upon first sign-in
+// - No manual approval process required
 passport.use(new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
@@ -34,7 +38,8 @@ passport.use(new GitHubStrategy({
             return done(null, user);
         }
 
-        // Auto-approve all new users - no whitelist needed
+        // ✅ AUTO-APPROVAL: All new users are automatically approved
+        // No whitelist checking - open for any GitHub user
         user = new User({
             githubId: profile.id,
             username: githubUsername,
@@ -43,7 +48,7 @@ passport.use(new GitHubStrategy({
             avatarUrl: profile.photos?.[0]?.value,
             githubAccessToken: accessToken,
             authProvider: 'github',
-            // Auto-approve all users
+            // Auto-approve all users - no manual intervention needed
             isRegistered: true,
             registrationStatus: 'approved',
             registeredAt: new Date(),

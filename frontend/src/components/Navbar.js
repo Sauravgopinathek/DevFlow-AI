@@ -110,18 +110,6 @@ const Navbar = () => {
                         <hr className="my-2 border-gray-700" />
                         <button
                           onClick={() => {
-                            window.location.href = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/auth/switch-account`;
-                            setIsProfileDropdownOpen(false);
-                          }}
-                          className="flex items-center w-full px-4 py-3 text-white hover:bg-gray-700 transition-all duration-200"
-                        >
-                          <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                          </svg>
-                          🔄 Switch Account
-                        </button>
-                        <button
-                          onClick={() => {
                             logout();
                             setIsProfileDropdownOpen(false);
                           }}
@@ -196,15 +184,6 @@ const Navbar = () => {
                   >
                     ⚙️ Settings
                   </Link>
-                  <button
-                    onClick={() => {
-                      window.location.href = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/auth/switch-account`;
-                      setIsMenuOpen(false);
-                    }}
-                    className="block w-full bg-gray-600 hover:bg-gray-500 text-white font-bold px-4 py-2 rounded-xl"
-                  >
-                    🔄 Switch Account
-                  </button>
                   <button
                     onClick={() => {
                       logout();
