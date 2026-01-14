@@ -1,11 +1,21 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const Analytics = require('../models/Analytics');
 const User = require('../models/User');
 const { requireAdmin } = require('../middleware/adminAuth');
 
-// Track an analytics event (public endpoint with rate limiting in production)
-router.post('/track', async (req, res) => {
+// Rate limiting for analytics tracking endpoint
+const trackLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many analytics requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+// Track an analytics event (public endpoint with rate limiting)
+router.post('/track', trackLimiter, async (req, res) => {
   try {
     const {
       pageUrl,
