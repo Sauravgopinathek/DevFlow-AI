@@ -11,6 +11,8 @@ const registrationRoutes = require('./routes/registration');
 const userRoutes = require('./routes/user');
 const githubRoutes = require('./routes/github');
 const adminRoutes = require('./routes/admin');
+const analyticsRoutes = require('./routes/analytics');
+const { trackAnalytics } = require('./middleware/analytics');
 
 const app = express();
 
@@ -76,12 +78,21 @@ app.use(passport.session());
 // Passport configuration
 require('./config/passport');
 
+// Analytics middleware (optional - only if MongoDB is connected)
+if (process.env.MONGODB_URI && mongoConnected) {
+  app.use(trackAnalytics({ 
+    trackPageViews: true, 
+    trackApiCalls: false 
+  }));
+}
+
 // Routes
 app.use('/auth', authRoutes);
 app.use('/api/registration', registrationRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/github', githubRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

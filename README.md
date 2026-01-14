@@ -70,11 +70,25 @@ DevFlow AI is a comprehensive developer productivity platform that showcases the
 - **Activity Feed**: Recent activity with intelligent filtering
 - **Quick Actions**: One-click access to GitHub tools and features
 
+### 📈 **User Analytics** (NEW!)
+- **Real-Time Tracking**: Automatic page view and event tracking
+- **Visitor Analytics**: Unique visitor counts and session tracking
+- **User Metrics**: Active users, registration trends, and growth charts
+- **Activity Timeline**: Live feed of user actions and events
+- **Admin Dashboard**: Comprehensive analytics dashboard with visual charts
+- **Privacy-Friendly**: No PII tracking, anonymous session-based analytics
+
 ### 🛠️ **Developer Tools**
 - **Repository Management**: Create, analyze, and safely delete repositories
 - **Issue Tracking**: Direct integration with GitHub issues
 - **PR Monitoring**: Pull request management and tracking
 - **Workflow Automation**: Streamlined developer productivity tools
+
+### 👤 **User Registration** (IMPROVED!)
+- **Instant Access**: Auto-approved registrations for immediate login
+- **Email/Password**: Simple email-based registration without verification delays
+- **GitHub OAuth**: Seamless sign-in with your GitHub account
+- **Quick Onboarding**: Start using the platform in seconds
 
 ### 🚀 **Technical Excellence**
 - **Performance**: Optimized API calls and caching strategies
@@ -283,6 +297,49 @@ GET    /api/user/profile    # Get profile
 PUT    /api/user/profile    # Update profile
 DELETE /api/user/account    # Delete account
 ```
+
+### **📊 Analytics** (NEW!)
+```http
+POST   /api/analytics/track       # Track analytics event (public)
+GET    /api/analytics/stats       # Get analytics summary (admin only)
+GET    /api/analytics/visitors    # Get unique visitor count (admin only)
+GET    /api/analytics/users       # Get registered user stats (admin only)
+GET    /api/analytics/activity    # Get user activity timeline (admin only)
+```
+
+### **✨ Registration & Login** (IMPROVED!)
+```http
+POST   /api/registration/register       # Register new user (auto-approved)
+POST   /api/registration/login          # Login with email/password
+GET    /api/registration/verify-email/:token  # Verify email (optional)
+POST   /api/registration/resend-verification  # Resend verification email
+GET    /api/registration/status/:email  # Check registration status
+```
+
+## 🎯 **Using the Platform**
+
+### **📈 Accessing Analytics Dashboard**
+1. **Login** to your account (must be an admin user)
+2. Click on your **profile dropdown** in the top right
+3. Select **"📊 Analytics"** from the menu
+4. View comprehensive analytics including:
+   - Total registered users
+   - Unique visitors (24h, 7d, 30d)
+   - Page views and popular pages
+   - Active users and user growth charts
+   - Recent activity timeline
+
+**Admin Access**: Analytics dashboard requires admin privileges. Configure admin users in `backend/middleware/adminAuth.js` by adding emails or usernames to the admin lists.
+
+### **👤 User Registration**
+1. Click **"Register"** or **"Sign Up"** 
+2. Fill in your details (username, display name, email, password)
+3. Submit the form
+4. **Instant Access**: Your account is automatically approved!
+5. You'll be redirected to login within 2 seconds
+6. Start using DevFlow AI immediately
+
+**No Email Verification Required**: Unlike traditional flows, you can login immediately after registration. Email verification is optional and doesn't block access.
 
 ### **📊 Response Format**
 ```json

@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
   registrationStatus: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
-    default: 'pending'
+    default: 'approved' // Auto-approve by default
   },
   registeredAt: {
     type: Date
@@ -50,7 +50,7 @@ const userSchema = new mongoose.Schema({
   },
   emailVerified: {
     type: Boolean,
-    default: false
+    default: true // Auto-verify by default to allow immediate login
   },
   emailVerificationToken: {
     type: String
