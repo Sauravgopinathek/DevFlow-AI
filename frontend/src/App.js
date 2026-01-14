@@ -21,15 +21,9 @@ import BackgroundDemo from './components/BackgroundDemo';
 import useAnalytics from './hooks/useAnalytics';
 
 function AppContent() {
-  // Track page views automatically - wrapped in try-catch for safety
-  try {
-    useAnalytics(true);
-  } catch (error) {
-    // Silently fail if analytics hook fails - app should continue working
-    if (process.env.NODE_ENV !== 'production') {
-      console.debug('Analytics hook error:', error.message);
-    }
-  }
+  // Track page views automatically
+  // Note: Hook is already wrapped with error handling internally
+  useAnalytics(true);
 
   return (
     <ErrorBoundary fallbackMessage="The application encountered an error. Please refresh the page or contact support if the problem persists.">

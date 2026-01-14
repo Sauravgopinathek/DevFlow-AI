@@ -22,6 +22,7 @@ const Profile = () => {
   useEffect(() => {
     fetchProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // fetchProfile is not included in deps to avoid infinite loop, only called on mount
   }, []);
 
   const fetchProfile = async () => {

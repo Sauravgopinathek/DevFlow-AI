@@ -172,7 +172,10 @@ class AnalyticsService {
     try {
       localStorage.setItem('analytics_queue', JSON.stringify(this.queue));
     } catch (error) {
-      // Silently fail - don't log to avoid console spam
+      // Silently fail in production - localStorage may be unavailable or full
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('Failed to save analytics queue to localStorage:', error.message);
+      }
     }
   }
 
@@ -184,7 +187,10 @@ class AnalyticsService {
         this.queue = JSON.parse(saved);
       }
     } catch (error) {
-      // Silently fail - don't log to avoid console spam
+      // Silently fail in production - localStorage may be unavailable or corrupted
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('Failed to load analytics queue from localStorage:', error.message);
+      }
     }
   }
 

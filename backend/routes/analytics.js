@@ -27,7 +27,6 @@ router.post('/track', trackLimiter, async (req, res) => {
     // Validate required fields
     if (!pageUrl || !sessionId) {
       return res.status(400).json({ 
-        success: false,
         error: 'pageUrl and sessionId are required' 
       });
     }
