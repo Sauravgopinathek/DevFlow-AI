@@ -593,7 +593,7 @@ router.get('/profile-stats', requireAuth, async (req, res) => {
     ]);
 
     // Calculate total stars
-    const totalStars = reposResponse.data.reduce((sum, repo) => sum + repo.stargazers_count, 0);
+    const totalStars = reposResponse.data.reduce((sum, repo) => sum + (repo.stargazers_count || 0), 0);
 
     // Get recent activity (events)
     const activityResponse = await axios.get(`https://api.github.com/users/${encodeURIComponent(req.user.username)}/events/public`, {
@@ -608,34 +608,35 @@ router.get('/profile-stats', requireAuth, async (req, res) => {
     const recentActivity = activityResponse.data.slice(0, 3).map(event => {
       let description = '';
       let icon = '📝';
+      const repoName = event.repo?.name || 'a repository';
 
       switch (event.type) {
         case 'PushEvent':
-          description = `Pushed to ${event.repo.name}`;
+          description = `Pushed to ${repoName}`;
           icon = '🚀';
           break;
         case 'PullRequestEvent':
-          description = `${event.payload.action} PR in ${event.repo.name}`;
+          description = `${event.payload?.action || 'updated'} PR in ${repoName}`;
           icon = '🔀';
           break;
         case 'IssuesEvent':
-          description = `${event.payload.action} issue in ${event.repo.name}`;
+          description = `${event.payload?.action || 'updated'} issue in ${repoName}`;
           icon = '🐛';
           break;
         case 'CreateEvent':
-          description = `Created ${event.payload.ref_type} in ${event.repo.name}`;
+          description = `Created ${event.payload?.ref_type || 'item'} in ${repoName}`;
           icon = '✨';
           break;
         case 'WatchEvent':
-          description = `Starred ${event.repo.name}`;
+          description = `Starred ${repoName}`;
           icon = '⭐';
           break;
         case 'ForkEvent':
-          description = `Forked ${event.repo.name}`;
+          description = `Forked ${repoName}`;
           icon = '🍴';
           break;
         default:
-          description = `${event.type.replace('Event', '')} on ${event.repo.name}`;
+          description = `${event.type.replace('Event', '')} on ${repoName}`;
           icon = '📝';
       }
 

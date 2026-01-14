@@ -70,6 +70,13 @@ const UserSettings = () => {
   };
 
   const handleDeleteAccount = async () => {
+    // Check if user exists
+    if (!user || !user.username) {
+      setMessage({ type: 'error', text: 'User information not available' });
+      setTimeout(() => setMessage(null), 3000);
+      return;
+    }
+    
     // Check if username matches
     if (deleteConfirmText !== user.username) {
       setMessage({ type: 'error', text: 'Please type your username correctly to confirm deletion' });
@@ -469,17 +476,17 @@ const UserSettings = () => {
                 {/* Username Confirmation */}
                 <div>
                   <p className="text-red-800 font-bold mb-2">
-                    Type your username <code className="bg-red-200 px-2 py-1 rounded">{user.username}</code> to confirm:
+                    Type your username <code className="bg-red-200 px-2 py-1 rounded">{user?.username || ''}</code> to confirm:
                   </p>
                   <input
                     type="text"
                     value={deleteConfirmText}
                     onChange={(e) => setDeleteConfirmText(e.target.value)}
                     className="w-full px-4 py-3 border-2 border-red-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
-                    placeholder={`Type "${user.username}" to confirm`}
+                    placeholder={`Type "${user?.username || 'username'}" to confirm`}
                   />
                   <p className="text-sm text-gray-600 mt-1">
-                    Characters: {deleteConfirmText.length}/{user.username.length}
+                    Characters: {deleteConfirmText.length}/{user?.username?.length || 0}
                   </p>
                 </div>
 
@@ -503,7 +510,7 @@ const UserSettings = () => {
                   </button>
                   <button
                     onClick={handleDeleteAccount}
-                    disabled={saving || deleteConfirmText !== user.username || !Object.values(deleteChecks).every(v => v)}
+                    disabled={saving || deleteConfirmText !== user?.username || !Object.values(deleteChecks).every(v => v)}
                     className="flex-1 bg-red-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-red-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {saving ? 'Processing...' : 'Continue to Final Confirmation'}
@@ -540,7 +547,7 @@ const UserSettings = () => {
                 You are about to permanently delete the account:
               </p>
               <p className="text-xl font-bold text-themed-primary mb-4">
-                {user.username}
+                {user?.username || 'Unknown'}
               </p>
               <p className="text-sm text-red-600">
                 This action cannot be undone!
