@@ -23,7 +23,7 @@ router.post('/track', async (req, res) => {
 
     // Get IP address (handle proxy scenarios)
     const ipAddress = req.headers['x-forwarded-for'] || 
-                     req.connection.remoteAddress || 
+                     req.socket?.remoteAddress || 
                      req.ip || 
                      'unknown';
 
@@ -53,10 +53,11 @@ router.post('/track', async (req, res) => {
     });
   } catch (error) {
     console.error('Analytics tracking error:', error);
-    // Don't fail the request if analytics fails
+    // Don't fail the request if analytics fails - respond with error details for debugging
     res.json({ 
       success: false,
-      message: 'Analytics tracking failed (non-critical)' 
+      message: 'Analytics tracking failed (non-critical)',
+      error: process.env.NODE_ENV !== 'production' ? error.message : undefined
     });
   }
 });

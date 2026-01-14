@@ -33,11 +33,11 @@ const trackAnalytics = (options = {}) => {
       // Get session ID from session or generate one
       const sessionId = req.session?.id || 
                        req.headers['x-session-id'] || 
-                       `anon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                       `anon-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
       // Get IP address
       const ipAddress = req.headers['x-forwarded-for'] || 
-                       req.connection.remoteAddress || 
+                       req.socket?.remoteAddress || 
                        req.ip || 
                        'unknown';
 
@@ -92,11 +92,11 @@ const trackEvent = async (req, eventType, eventData = {}) => {
     // Get session ID
     const sessionId = req.session?.id || 
                      req.headers['x-session-id'] || 
-                     `anon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                     `anon-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
     // Get IP address
     const ipAddress = req.headers['x-forwarded-for'] || 
-                     req.connection.remoteAddress || 
+                     req.socket?.remoteAddress || 
                      req.ip || 
                      'unknown';
 

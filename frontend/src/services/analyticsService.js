@@ -21,7 +21,7 @@ class AnalyticsService {
   getOrCreateSessionId() {
     let sessionId = sessionStorage.getItem('analytics_session_id');
     if (!sessionId) {
-      sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
       sessionStorage.setItem('analytics_session_id', sessionId);
     }
     return sessionId;

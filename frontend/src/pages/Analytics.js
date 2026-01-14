@@ -210,24 +210,29 @@ const Analytics = () => {
                 User Growth (30d)
               </h3>
               <div className="space-y-3">
-                {stats?.charts?.registrationsOverTime?.slice(-7).map((item, index) => (
-                  <div key={index} className="flex items-center justify-between bg-white/5 rounded-lg p-3">
-                    <div className="flex-1">
-                      <span className="text-pink-200 font-medium">{item._id}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-32 bg-pink-900/30 rounded-full h-2 overflow-hidden">
-                        <div 
-                          className="bg-gradient-to-r from-pink-500 to-red-500 h-full rounded-full"
-                          style={{ width: `${Math.min(100, (item.count / 10) * 100)}%` }}
-                        ></div>
+                {stats?.charts?.registrationsOverTime?.slice(-7).map((item) => {
+                  const maxCount = Math.max(...(stats?.charts?.registrationsOverTime?.map(i => i.count) || [1]));
+                  const percentage = Math.min(100, (item.count / Math.max(maxCount, 1)) * 100);
+                  
+                  return (
+                    <div key={item._id} className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                      <div className="flex-1">
+                        <span className="text-pink-200 font-medium">{item._id}</span>
                       </div>
-                      <div className="bg-pink-500/30 rounded-full px-3 py-1 min-w-[3rem] text-center">
-                        <span className="text-white font-bold">{item.count}</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-32 bg-pink-900/30 rounded-full h-2 overflow-hidden">
+                          <div 
+                            className="bg-gradient-to-r from-pink-500 to-red-500 h-full rounded-full"
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                        </div>
+                        <div className="bg-pink-500/30 rounded-full px-3 py-1 min-w-[3rem] text-center">
+                          <span className="text-white font-bold">{item.count}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )) || <p className="text-pink-300 text-center py-4">No data available</p>}
+                  );
+                }) || <p className="text-pink-300 text-center py-4">No data available</p>}
               </div>
             </div>
           </div>
