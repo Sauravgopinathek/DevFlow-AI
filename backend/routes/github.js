@@ -596,7 +596,7 @@ router.get('/profile-stats', requireAuth, async (req, res) => {
     const totalStars = reposResponse.data.reduce((sum, repo) => sum + repo.stargazers_count, 0);
 
     // Get recent activity (events)
-    const activityResponse = await axios.get(`https://api.github.com/users/${req.user.username}/events/public`, {
+    const activityResponse = await axios.get(`https://api.github.com/users/${encodeURIComponent(req.user.username)}/events/public`, {
       headers: {
         'Authorization': `token ${req.user.githubAccessToken}`,
         'Accept': 'application/vnd.github.v3+json'

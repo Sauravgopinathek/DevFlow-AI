@@ -113,6 +113,12 @@ const UserSettings = () => {
   };
 
   const downloadUserData = () => {
+    if (!user) {
+      setMessage({ type: 'error', text: 'User data not available' });
+      setTimeout(() => setMessage(null), 3000);
+      return;
+    }
+    
     const userData = {
       profile: {
         username: user.username,

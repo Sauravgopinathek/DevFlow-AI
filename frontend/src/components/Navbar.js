@@ -46,7 +46,18 @@ const Navbar = () => {
 
   // Format time ago
   const timeAgo = (date) => {
-    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    if (!date) return 'recently';
+    
+    const now = new Date();
+    const past = new Date(date);
+    
+    // Check if date is valid
+    if (isNaN(past.getTime())) return 'recently';
+    
+    const seconds = Math.floor((now - past) / 1000);
+    
+    // Ensure seconds is positive
+    if (seconds < 0) return 'just now';
     
     let interval = seconds / 31536000;
     if (interval > 1) return Math.floor(interval) + 'y ago';
@@ -63,7 +74,7 @@ const Navbar = () => {
     interval = seconds / 60;
     if (interval > 1) return Math.floor(interval) + 'm ago';
     
-    return Math.floor(seconds) + 's ago';
+    return seconds < 10 ? 'just now' : Math.floor(seconds) + 's ago';
   };
 
   return (
