@@ -5,6 +5,7 @@ import analyticsService from '../services/analyticsService';
 /**
  * Hook for tracking analytics events
  * Automatically tracks page views on route changes
+ * All analytics operations are wrapped in try-catch to prevent crashes
  */
 const useAnalytics = (autoTrackPageViews = true) => {
   const location = useLocation();
@@ -12,27 +13,58 @@ const useAnalytics = (autoTrackPageViews = true) => {
   // Track page views automatically on route change
   useEffect(() => {
     if (autoTrackPageViews) {
-      analyticsService.trackPageView(location.pathname + location.search);
+      try {
+        analyticsService.trackPageView(location.pathname + location.search);
+      } catch (error) {
+        // Silently fail - analytics should never crash the app
+        if (process.env.NODE_ENV !== 'production') {
+          console.debug('useAnalytics: trackPageView error:', error.message);
+        }
+      }
     }
   }, [location, autoTrackPageViews]);
 
   // Track a custom event
   const trackEvent = useCallback((eventType, eventData = {}) => {
-    return analyticsService.trackEvent(
-      eventType,
-      location.pathname + location.search,
-      eventData
-    );
+    try {
+      return analyticsService.trackEvent(
+        eventType,
+        location.pathname + location.search,
+        eventData
+      );
+    } catch (error) {
+      // Silently fail - analytics should never crash the app
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('useAnalytics: trackEvent error:', error.message);
+      }
+      return Promise.resolve(false);
+    }
   }, [location]);
 
   // Track a user action
   const trackAction = useCallback((actionName, actionData = {}) => {
-    return analyticsService.trackAction(actionName, actionData);
+    try {
+      return analyticsService.trackAction(actionName, actionData);
+    } catch (error) {
+      // Silently fail - analytics should never crash the app
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('useAnalytics: trackAction error:', error.message);
+      }
+      return Promise.resolve(false);
+    }
   }, []);
 
   // Track page view manually
   const trackPageView = useCallback((pageUrl) => {
-    return analyticsService.trackPageView(pageUrl || location.pathname + location.search);
+    try {
+      return analyticsService.trackPageView(pageUrl || location.pathname + location.search);
+    } catch (error) {
+      // Silently fail - analytics should never crash the app
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('useAnalytics: manual trackPageView error:', error.message);
+      }
+      return Promise.resolve(false);
+    }
   }, [location]);
 
   return {

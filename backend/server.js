@@ -80,10 +80,14 @@ require('./config/passport');
 
 // Analytics middleware (optional - only if MongoDB is connected)
 if (process.env.MONGODB_URI && mongoConnected) {
-  app.use(trackAnalytics({ 
-    trackPageViews: true, 
-    trackApiCalls: false 
-  }));
+  try {
+    app.use(trackAnalytics({ 
+      trackPageViews: true, 
+      trackApiCalls: false 
+    }));
+  } catch (error) {
+    console.warn('Failed to initialize analytics middleware:', error.message);
+  }
 }
 
 // Routes
