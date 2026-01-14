@@ -40,55 +40,39 @@ router.post('/register', async (req, res) => {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Generate email verification token
-    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
-
-    // Create new user - requires email verification
+    // Create new user - auto-approved and verified for immediate login
     const user = new User({
       username,
       displayName,
       email,
       password: hashedPassword,
-      emailVerificationToken,
-      emailVerified: false, // Must be verified via email
+      emailVerified: true, // Auto-verify to allow immediate login
       isRegistered: true,
-      registrationStatus: 'pending', // Pending until email verified
+      registrationStatus: 'approved', // Auto-approve (matches GitHub OAuth flow)
       registeredAt: new Date(),
+      approvedAt: new Date(),
       authProvider: 'email'
     });
 
     await user.save();
 
-    // Send verification email
-    const emailResult = await emailService.sendVerificationEmail(email, emailVerificationToken, username);
-    
-    if (emailResult.success) {
-      res.json({
-        message: 'Registration successful! Please check your email to verify your account before logging in.',
-        user: {
-          id: user._id,
-          username: user.username,
-          displayName: user.displayName,
-          email: user.email,
-          registrationStatus: user.registrationStatus,
-          emailVerified: user.emailVerified
-        },
-        verificationUrl: emailResult.verificationUrl // For development/testing
-      });
-    } else {
-      // If email sending fails, still create account but inform user
-      res.json({
-        message: 'Registration successful! However, we could not send the verification email. Please contact support.',
-        user: {
-          id: user._id,
-          username: user.username,
-          displayName: user.displayName,
-          email: user.email,
-          registrationStatus: user.registrationStatus,
-          emailVerified: user.emailVerified
-        }
-      });
-    }
+    // Optionally send welcome email (non-blocking)
+    emailService.sendWelcomeEmail(email, username).catch(err => {
+      console.error('Failed to send welcome email:', err);
+      // Don't fail registration if email fails
+    });
+
+    res.json({
+      message: 'Registration successful! You can now login to your account.',
+      user: {
+        id: user._id,
+        username: user.username,
+        displayName: user.displayName,
+        email: user.email,
+        registrationStatus: user.registrationStatus,
+        emailVerified: user.emailVerified
+      }
+    });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Registration failed' });
@@ -195,15 +179,6 @@ router.post('/login', async (req, res) => {
     if (!user || !user.password) {
       return res.status(401).json({ 
         error: 'Invalid email or password' 
-      });
-    }
-
-    // Check if email is verified
-    if (!user.emailVerified) {
-      return res.status(401).json({ 
-        error: 'Please verify your email address before logging in. Check your inbox for the verification email.',
-        needsVerification: true,
-        email: user.email
       });
     }
 

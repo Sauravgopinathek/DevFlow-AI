@@ -48,8 +48,10 @@ const Register = () => {
       const response = await axios.post('/api/registration/register', registrationData);
       setMessage(response.data.message);
       
-      // Show success message and don't auto-redirect
-      // User needs to verify email first
+      // Auto-redirect to login after 2 seconds
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (error) {
       setError(error.response?.data?.error || 'Registration failed');
     } finally {
@@ -85,9 +87,9 @@ const Register = () => {
                   <div className="mt-2 text-green-700 font-medium">
                     <p>{message}</p>
                     <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-blue-800 font-semibold">📧 Check Your Email!</p>
+                      <p className="text-blue-800 font-semibold">🎉 You're All Set!</p>
                       <p className="text-blue-700 text-sm mt-1">
-                        We've sent a verification link to your email address. Click the link to activate your account and then you can sign in.
+                        Your account is ready to use! Redirecting to login page in 2 seconds...
                       </p>
                     </div>
                     <div className="mt-4 text-center">
@@ -95,7 +97,7 @@ const Register = () => {
                         to="/login" 
                         className="text-purple-600 hover:text-purple-500 font-bold underline"
                       >
-                        Go to Login Page
+                        Go to Login Page Now
                       </Link>
                     </div>
                   </div>
