@@ -568,6 +568,100 @@ router.post('/commit-readme', requireAuth, async (req, res) => {
   }
 });
 
+// Get profile stats for enhanced dropdown
+router.get('/profile-stats', requireAuth, async (req, res) => {
+  try {
+    if (!req.user.githubAccessToken) {
+      return res.status(400).json({ error: 'GitHub access token not found' });
+    }
+
+    // Fetch user data and repos in parallel
+    const [userResponse, reposResponse] = await Promise.all([
+      axios.get('https://api.github.com/user', {
+        headers: {
+          'Authorization': `token ${req.user.githubAccessToken}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      }),
+      axios.get('https://api.github.com/user/repos', {
+        headers: {
+          'Authorization': `token ${req.user.githubAccessToken}`,
+          'Accept': 'application/vnd.github.v3+json'
+        },
+        params: { sort: 'updated', per_page: 100 }
+      })
+    ]);
+
+    // Calculate total stars
+    const totalStars = reposResponse.data.reduce((sum, repo) => sum + (repo.stargazers_count || 0), 0);
+
+    // Get recent activity (events)
+    const activityResponse = await axios.get(`https://api.github.com/users/${encodeURIComponent(req.user.username)}/events/public`, {
+      headers: {
+        'Authorization': `token ${req.user.githubAccessToken}`,
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      params: { per_page: 3 }
+    }).catch(() => ({ data: [] }));
+
+    // Format recent activity
+    const recentActivity = activityResponse.data.slice(0, 3).map(event => {
+      let description = '';
+      let icon = '📝';
+      const repoName = event.repo?.name || 'a repository';
+
+      switch (event.type) {
+        case 'PushEvent':
+          description = `Pushed to ${repoName}`;
+          icon = '🚀';
+          break;
+        case 'PullRequestEvent':
+          description = `${event.payload?.action || 'updated'} PR in ${repoName}`;
+          icon = '🔀';
+          break;
+        case 'IssuesEvent':
+          description = `${event.payload?.action || 'updated'} issue in ${repoName}`;
+          icon = '🐛';
+          break;
+        case 'CreateEvent':
+          description = `Created ${event.payload?.ref_type || 'item'} in ${repoName}`;
+          icon = '✨';
+          break;
+        case 'WatchEvent':
+          description = `Starred ${repoName}`;
+          icon = '⭐';
+          break;
+        case 'ForkEvent':
+          description = `Forked ${repoName}`;
+          icon = '🍴';
+          break;
+        default:
+          description = `${event.type.replace('Event', '')} on ${repoName}`;
+          icon = '📝';
+      }
+
+      return {
+        type: event.type,
+        repo: event.repo?.name,
+        description,
+        icon,
+        created_at: event.created_at
+      };
+    });
+
+    res.json({
+      repos: userResponse.data.public_repos,
+      stars: totalStars,
+      followers: userResponse.data.followers,
+      following: userResponse.data.following,
+      recentActivity
+    });
+  } catch (error) {
+    console.error('Error fetching profile stats:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to fetch profile stats' });
+  }
+});
+
 // Helper function to generate README template
 function generateReadmeTemplate({ repoName, repoDescription, language, owner, hasExistingReadme, repoDetails }) {
   const languageSetup = getLanguageSetup(language);

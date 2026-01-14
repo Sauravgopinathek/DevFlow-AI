@@ -19,11 +19,12 @@ DevFlow AI is a comprehensive developer productivity platform that showcases the
 ## ✨ **Live Demo Features**
 
 🎨 **Modern UI**: Beautiful gradient backgrounds with animated floating elements  
-🔐 **GitHub OAuth**: Seamless authentication with any GitHub account  
+🔐 **GitHub OAuth**: **Open to ALL users** - any GitHub account can sign in instantly!  
 📊 **Smart Dashboard**: Real-time repository health monitoring and analytics  
 🛠️ **Repository Management**: Safe deletion, health scoring, and quick actions  
 🌓 **Adaptive Theming**: Smooth dark/light mode with persistent settings  
 📱 **Responsive Design**: Perfect experience across all devices  
+👤 **Enhanced Profile**: Dropdown with live stats, activity feed, and quick actions  
 
 
 ## 🏆 **Hackathon Excellence**
@@ -59,10 +60,12 @@ DevFlow AI is a comprehensive developer productivity platform that showcases the
 ```
 
 ### 🔐 **GitHub Integration**
+- **Open Access**: **ANY GitHub user can sign in** - no whitelist, no approval needed!
 - **OAuth Flow**: Seamless authentication with any GitHub account
+- **Auto-Approval**: All new users are automatically approved on first sign-in
 - **Multi-User**: Isolated workspaces for different users
 - **Real-Time Sync**: Live data synchronization with GitHub API
-- **Account Management**: Easy switching between GitHub accounts
+- **Enhanced Profile**: Beautiful dropdown with stats and recent activity
 
 ### 📊 **Smart Dashboard**
 - **Repository Health**: AI-powered health scoring and recommendations

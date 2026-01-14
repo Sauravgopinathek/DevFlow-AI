@@ -6,7 +6,7 @@ import axios from 'axios';
 
 const UserSettings = () => {
   const { user, logout } = useAuth();
-  const { settings: globalSettings, updateSettings: updateGlobalSettings, showNotification } = useSettings();
+  const { updateSettings: updateGlobalSettings, showNotification } = useSettings();
   const navigate = useNavigate();
   const [settings, setSettings] = useState({
     notifications: {
@@ -18,23 +18,28 @@ const UserSettings = () => {
       timezone: 'UTC',
       language: 'en',
       autoSync: true
-    },
-    integrations: {
-      github: false
     }
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
-  const [activeTab, setActiveTab] = useState('integrations');
+  const [activeTab, setActiveTab] = useState('preferences');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteChecks, setDeleteChecks] = useState({
+    permanent: false,
+    dataDeleted: false,
+    repoAccess: false,
+    dataDownloaded: false,
+    proceed: false
+  });
+  const [showFinalModal, setShowFinalModal] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [originalSettings, setOriginalSettings] = useState(null);
 
   useEffect(() => {
     fetchSettings();
-    checkIntegrations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchSettings = async () => {
@@ -64,32 +69,42 @@ const UserSettings = () => {
     }
   };
 
-  const checkIntegrations = async () => {
-    try {
-      const githubStatus = await axios.get('/api/user/profile').catch(() => ({ data: { githubConnected: false } }));
-
-      setSettings(prev => ({
-        ...prev,
-        integrations: {
-          github: githubStatus.data.githubConnected || false
-        }
-      }));
-    } catch (error) {
-      console.error('Failed to check integrations:', error);
-    }
-  };
-
   const handleDeleteAccount = async () => {
+    // Check if user exists
+    if (!user || !user.username) {
+      setMessage({ type: 'error', text: 'User information not available' });
+      setTimeout(() => setMessage(null), 3000);
+      return;
+    }
+    
+    // Check if username matches
     if (deleteConfirmText !== user.username) {
       setMessage({ type: 'error', text: 'Please type your username correctly to confirm deletion' });
       setTimeout(() => setMessage(null), 3000);
       return;
     }
 
+    // Check if all checkboxes are checked
+    const allChecked = Object.values(deleteChecks).every(val => val === true);
+    if (!allChecked) {
+      setMessage({ type: 'error', text: 'Please confirm all checkboxes before proceeding' });
+      setTimeout(() => setMessage(null), 3000);
+      return;
+    }
+
+    // Show final confirmation modal
+    setShowFinalModal(true);
+  };
+
+  const confirmFinalDeletion = async () => {
     setSaving(true);
     try {
       await axios.delete('/api/user/account');
       setMessage({ type: 'success', text: 'Account deleted successfully. Redirecting...' });
+      
+      // Clear local storage
+      localStorage.clear();
+      sessionStorage.clear();
       
       // Logout and redirect after a short delay
       setTimeout(() => {
@@ -100,7 +115,40 @@ const UserSettings = () => {
       setMessage({ type: 'error', text: 'Error deleting account' });
       setTimeout(() => setMessage(null), 3000);
       setSaving(false);
+      setShowFinalModal(false);
     }
+  };
+
+  const downloadUserData = () => {
+    if (!user) {
+      setMessage({ type: 'error', text: 'User data not available' });
+      setTimeout(() => setMessage(null), 3000);
+      return;
+    }
+    
+    const userData = {
+      profile: {
+        username: user.username,
+        displayName: user.displayName,
+        email: user.email,
+        avatarUrl: user.avatarUrl
+      },
+      settings: settings,
+      exportedAt: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(userData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `devflow-data-${user.username}-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    setMessage({ type: 'success', text: 'Your data has been downloaded!' });
+    setTimeout(() => setMessage(null), 3000);
   };
 
   const saveSettings = async () => {
@@ -178,14 +226,14 @@ const UserSettings = () => {
       {/* Tab Navigation */}
       <div className="flex space-x-4 justify-center mb-8">
         <button
-          onClick={() => setActiveTab('integrations')}
+          onClick={() => setActiveTab('preferences')}
           className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 ${
-            activeTab === 'integrations'
+            activeTab === 'preferences'
               ? 'bg-blue-600 dark:bg-blue-500 text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          Integrations
+          ⚙️ Preferences
         </button>
         <button
           onClick={() => setActiveTab('danger')}
@@ -209,49 +257,94 @@ const UserSettings = () => {
         </div>
       )}
 
-
-
-      {/* Integrations Tab */}
-      {activeTab === 'integrations' && (
+      {/* Preferences Tab */}
+      {activeTab === 'preferences' && (
         <div className="space-y-6">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4">Connected Integrations</h4>
+          <h4 className="text-lg font-semibold text-themed-primary mb-4">User Preferences</h4>
           
-          <div className="grid gap-4">
-            {settings.integrations.github && (
-              <button
-                onClick={() => window.open(`https://github.com/${user?.username}`, '_blank')}
-                className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900 rounded-lg border border-green-200 dark:border-green-700 hover:bg-green-100 dark:hover:bg-green-800 transition-all duration-200 cursor-pointer"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">GH</span>
-                  </div>
-                  <div>
-                    <h5 className="font-medium text-gray-900">GitHub</h5>
-                    <p className="text-sm text-gray-600">Code repository integration</p>
-                  </div>
+          <div className="space-y-4">
+            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <label className="flex items-center justify-between">
+                <div>
+                  <h5 className="font-medium text-themed-primary">Theme</h5>
+                  <p className="text-sm text-themed-secondary">Choose your preferred theme</p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="px-3 py-1 rounded-full text-sm font-bold bg-green-100 text-green-800">
-                    Connected
-                  </div>
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
+                <select
+                  value={settings.preferences.theme}
+                  onChange={(e) => handleSettingChange('preferences', 'theme', e.target.value)}
+                  className="px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-themed-primary"
+                >
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                  <option value="auto">Auto</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <label className="flex items-center justify-between">
+                <div>
+                  <h5 className="font-medium text-themed-primary">Language</h5>
+                  <p className="text-sm text-themed-secondary">Select your language</p>
                 </div>
-              </button>
-            )}
+                <select
+                  value={settings.preferences.language}
+                  onChange={(e) => handleSettingChange('preferences', 'language', e.target.value)}
+                  className="px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-themed-primary"
+                >
+                  <option value="en">English</option>
+                  <option value="es">Español</option>
+                  <option value="fr">Français</option>
+                  <option value="de">Deutsch</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <label className="flex items-center justify-between">
+                <div>
+                  <h5 className="font-medium text-themed-primary">Timezone</h5>
+                  <p className="text-sm text-themed-secondary">Your local timezone</p>
+                </div>
+                <select
+                  value={settings.preferences.timezone}
+                  onChange={(e) => handleSettingChange('preferences', 'timezone', e.target.value)}
+                  className="px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-themed-primary"
+                >
+                  <option value="UTC">UTC</option>
+                  <option value="America/New_York">Eastern Time</option>
+                  <option value="America/Chicago">Central Time</option>
+                  <option value="America/Los_Angeles">Pacific Time</option>
+                  <option value="Europe/London">London</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <label className="flex items-center justify-between">
+                <div>
+                  <h5 className="font-medium text-themed-primary">Auto Sync</h5>
+                  <p className="text-sm text-themed-secondary">Automatically sync data</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settings.preferences.autoSync}
+                  onChange={(e) => handleSettingChange('preferences', 'autoSync', e.target.checked)}
+                  className="w-5 h-5"
+                />
+              </label>
+            </div>
           </div>
 
-          <div className="text-center py-8">
-            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-              </svg>
-            </div>
-            <h4 className="text-lg font-semibold text-gray-800 mb-2">Integration Status</h4>
-            <p className="text-gray-600">Manage your connected services and integrations.</p>
-          </div>
+          {hasUnsavedChanges && (
+            <button
+              onClick={saveSettings}
+              disabled={saving}
+              className="w-full bg-blue-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-300 disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : 'Save Preferences'}
+            </button>
+          )}
         </div>
       )}
 
@@ -259,62 +352,175 @@ const UserSettings = () => {
       {activeTab === 'danger' && (
         <div className="space-y-6">
           <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
-            <h3 className="text-lg font-bold text-red-800 mb-4">🚨 Delete Account</h3>
-            <p className="text-red-700 mb-4">
-              ⚠️ <strong>Warning:</strong> This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
-            </p>
-            <p className="text-red-600 text-sm mb-4">
-              This will delete:
-            </p>
-            <ul className="text-red-600 text-sm mb-6 list-disc list-inside space-y-1">
-              <li>Your profile and account information</li>
-              <li>All connected integrations (GitHub)</li>
-              <li>Your settings and preferences</li>
-              <li>All stored tokens and credentials</li>
-            </ul>
+            <h3 className="text-xl font-bold text-red-800 mb-4 flex items-center">
+              <span className="text-3xl mr-2">⚠️</span> Delete Account
+            </h3>
+            
+            <div className="mb-6">
+              <p className="text-red-700 mb-4 font-semibold">
+                <strong>Warning:</strong> This action is PERMANENT and IRREVERSIBLE!
+              </p>
+              <p className="text-red-600 text-sm mb-3">
+                The following data will be permanently deleted:
+              </p>
+              <ul className="text-red-600 text-sm mb-6 list-none space-y-2">
+                <li className="flex items-start">
+                  <span className="mr-2">🔗</span>
+                  <span>Your GitHub account connection</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2">📦</span>
+                  <span>All repository data and access</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2">👤</span>
+                  <span>Profile information and settings</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2">📊</span>
+                  <span>All activity history</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2">📈</span>
+                  <span>Analytics data (if any)</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2">⚙️</span>
+                  <span>Saved preferences</span>
+                </li>
+              </ul>
+
+              {/* Download Data Button */}
+              <button
+                onClick={downloadUserData}
+                className="w-full bg-blue-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-300 mb-4"
+              >
+                📥 Download My Data (Optional)
+              </button>
+            </div>
             
             {!showDeleteConfirm ? (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 className="bg-red-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-red-600 transition-all duration-300"
               >
-                Delete My Account
+                I understand, show me how to delete
               </button>
             ) : (
               <div className="space-y-4">
-                <p className="text-red-800 font-bold">
-                  Type your username <code className="bg-red-200 px-2 py-1 rounded">{user.username}</code> to confirm:
-                </p>
-                <input
-                  type="text"
-                  value={deleteConfirmText}
-                  onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-red-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder={`Type "${user.username}" to confirm`}
-                />
+                {/* Confirmation Checklist */}
+                <div className="bg-white p-4 rounded-lg space-y-3">
+                  <h4 className="font-bold text-red-800 mb-3">Please confirm the following:</h4>
+                  
+                  <label className="flex items-start space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={deleteChecks.permanent}
+                      onChange={(e) => setDeleteChecks({...deleteChecks, permanent: e.target.checked})}
+                      className="w-5 h-5 mt-1"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I understand this action is PERMANENT and IRREVERSIBLE
+                    </span>
+                  </label>
+
+                  <label className="flex items-start space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={deleteChecks.dataDeleted}
+                      onChange={(e) => setDeleteChecks({...deleteChecks, dataDeleted: e.target.checked})}
+                      className="w-5 h-5 mt-1"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I understand all my data will be permanently deleted
+                    </span>
+                  </label>
+
+                  <label className="flex items-start space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={deleteChecks.repoAccess}
+                      onChange={(e) => setDeleteChecks({...deleteChecks, repoAccess: e.target.checked})}
+                      className="w-5 h-5 mt-1"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I understand I will lose access to all connected repositories
+                    </span>
+                  </label>
+
+                  <label className="flex items-start space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={deleteChecks.dataDownloaded}
+                      onChange={(e) => setDeleteChecks({...deleteChecks, dataDownloaded: e.target.checked})}
+                      className="w-5 h-5 mt-1"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I have downloaded my data (if needed)
+                    </span>
+                  </label>
+
+                  <label className="flex items-start space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={deleteChecks.proceed}
+                      onChange={(e) => setDeleteChecks({...deleteChecks, proceed: e.target.checked})}
+                      className="w-5 h-5 mt-1"
+                    />
+                    <span className="text-sm text-gray-700 font-bold">
+                      I want to proceed with account deletion
+                    </span>
+                  </label>
+                </div>
+
+                {/* Username Confirmation */}
+                <div>
+                  <p className="text-red-800 font-bold mb-2">
+                    Type your username <code className="bg-red-200 px-2 py-1 rounded">{user?.username || ''}</code> to confirm:
+                  </p>
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-red-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder={`Type "${user?.username || 'username'}" to confirm`}
+                  />
+                  <p className="text-sm text-gray-600 mt-1">
+                    Characters: {deleteConfirmText.length}/{user?.username?.length || 0}
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
                 <div className="flex space-x-4">
-                  <button
-                    onClick={handleDeleteAccount}
-                    disabled={saving || deleteConfirmText !== user.username}
-                    className="bg-red-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-red-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {saving ? 'Deleting...' : 'Yes, Delete My Account'}
-                  </button>
                   <button
                     onClick={() => {
                       setShowDeleteConfirm(false);
                       setDeleteConfirmText('');
+                      setDeleteChecks({
+                        permanent: false,
+                        dataDeleted: false,
+                        repoAccess: false,
+                        dataDownloaded: false,
+                        proceed: false
+                      });
                     }}
-                    className="bg-gray-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-gray-600 transition-all duration-300"
+                    className="flex-1 bg-gray-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-gray-600 transition-all duration-300"
                   >
                     Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={saving || deleteConfirmText !== user?.username || !Object.values(deleteChecks).every(v => v)}
+                    className="flex-1 bg-red-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-red-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving ? 'Processing...' : 'Continue to Final Confirmation'}
                   </button>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="text-center py-8">
+          <div className="text-center py-4">
             <div className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -322,6 +528,47 @@ const UserSettings = () => {
             </div>
             <h4 className="text-lg font-semibold text-red-800 mb-2">Danger Zone</h4>
             <p className="text-red-600">Irreversible actions that affect your account.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Final Confirmation Modal */}
+      {showFinalModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-red-800 mb-2">Are you absolutely sure?</h3>
+              <p className="text-gray-600 mb-4">
+                You are about to permanently delete the account:
+              </p>
+              <p className="text-xl font-bold text-themed-primary mb-4">
+                {user?.username || 'Unknown'}
+              </p>
+              <p className="text-sm text-red-600">
+                This action cannot be undone!
+              </p>
+            </div>
+            
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowFinalModal(false)}
+                className="flex-1 bg-gray-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-gray-600 transition-all duration-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmFinalDeletion}
+                disabled={saving}
+                className="flex-1 bg-red-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-red-700 transition-all duration-300 disabled:opacity-50"
+              >
+                {saving ? 'Deleting...' : 'Yes, Delete My Account Forever'}
+              </button>
+            </div>
           </div>
         </div>
       )}
