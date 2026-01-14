@@ -6,7 +6,7 @@ import axios from 'axios';
 
 const UserSettings = () => {
   const { user, logout } = useAuth();
-  const { settings: globalSettings, updateSettings: updateGlobalSettings, showNotification } = useSettings();
+  const { updateSettings: updateGlobalSettings, showNotification } = useSettings();
   const navigate = useNavigate();
   const [settings, setSettings] = useState({
     notifications: {
@@ -39,6 +39,7 @@ const UserSettings = () => {
 
   useEffect(() => {
     fetchSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchSettings = async () => {
