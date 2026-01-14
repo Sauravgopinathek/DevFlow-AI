@@ -54,11 +54,15 @@ const Navbar = () => {
                       className="flex items-center space-x-3 bg-gray-700 rounded-full px-6 py-3 shadow-lg border-2 border-gray-600 hover:bg-gray-600 transition-all duration-300 transform hover:scale-105"
                     >
                       <img
-                        src={user.avatarUrl}
-                        alt={user.username}
+                        src={user?.avatarUrl || 'https://via.placeholder.com/40'}
+                        alt={user?.username || 'User'}
                         className="w-10 h-10 rounded-full ring-4 ring-gray-500 shadow-lg"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://via.placeholder.com/40?text=User';
+                        }}
                       />
-                      <span className="text-white font-bold">{user.displayName}</span>
+                      <span className="text-white font-bold">{user?.displayName || user?.username || 'User'}</span>
                       <svg
                         className={`w-4 h-4 text-gray-300 transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`}
                         fill="none"
@@ -167,11 +171,15 @@ const Navbar = () => {
                 </Link>
                 <div className="flex items-center space-x-3 py-3">
                   <img
-                    src={user.avatarUrl}
-                    alt={user.username}
+                    src={user?.avatarUrl || 'https://via.placeholder.com/40'}
+                    alt={user?.username || 'User'}
                     className="w-10 h-10 rounded-full ring-4 ring-gray-500"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://via.placeholder.com/40?text=User';
+                    }}
                   />
-                  <span className="text-white font-bold">{user.displayName}</span>
+                  <span className="text-white font-bold">{user?.displayName || user?.username || 'User'}</span>
                 </div>
                 <div className="space-y-2">
                   <Link

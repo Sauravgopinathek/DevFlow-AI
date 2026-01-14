@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -20,72 +21,83 @@ import BackgroundDemo from './components/BackgroundDemo';
 import useAnalytics from './hooks/useAnalytics';
 
 function AppContent() {
-  // Track page views automatically
-  useAnalytics(true);
+  // Track page views automatically - wrapped in try-catch for safety
+  try {
+    useAnalytics(true);
+  } catch (error) {
+    // Silently fail if analytics hook fails - app should continue working
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('Analytics hook error:', error.message);
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/demo/backgrounds" element={<BackgroundDemo />} />
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/profile" 
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/analytics" 
-          element={
-            <ProtectedRoute>
-              <Analytics />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/settings" 
-          element={
-            <ProtectedRoute>
-              <div className="min-h-screen bg-gray-900 py-8">
-                <div className="max-w-4xl mx-auto px-4 space-y-8">
-                  <UserSettings />
+    <ErrorBoundary fallbackMessage="The application encountered an error. Please refresh the page or contact support if the problem persists.">
+      <div className="min-h-screen bg-gray-900 text-white">
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/demo/backgrounds" element={<BackgroundDemo />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/analytics" 
+            element={
+              <ProtectedRoute>
+                <Analytics />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/settings" 
+            element={
+              <ProtectedRoute>
+                <div className="min-h-screen bg-gray-900 py-8">
+                  <div className="max-w-4xl mx-auto px-4 space-y-8">
+                    <UserSettings />
+                  </div>
                 </div>
-              </div>
-            </ProtectedRoute>
-          } 
-        />
-      </Routes>
-      <NotificationManager />
-    </div>
+              </ProtectedRoute>
+            } 
+          />
+        </Routes>
+        <NotificationManager />
+      </div>
+    </ErrorBoundary>
   );
 }
 
 function App() {
   return (
-    <AuthProvider>
-      <SettingsProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </SettingsProvider>
-    </AuthProvider>
+    <ErrorBoundary fallbackMessage="Failed to load the application. Please check your connection and refresh the page.">
+      <AuthProvider>
+        <SettingsProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </SettingsProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

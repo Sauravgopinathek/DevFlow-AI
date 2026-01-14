@@ -12,30 +12,49 @@ const requireAuth = (req, res, next) => {
 
 // Get user profile
 router.get('/profile', requireAuth, (req, res) => {
-  res.json({
-    id: req.user._id,
-    username: req.user.username,
-    displayName: req.user.displayName,
-    email: req.user.email,
-    avatarUrl: req.user.avatarUrl,
-    bio: req.user.bio,
-    location: req.user.location,
-    website: req.user.website,
-    preferences: req.user.preferences,
-    settings: req.user.settings,
-    githubConnected: !!req.user.githubAccessToken,
-    googleConnected: !!(req.user.googleTokens && req.user.googleTokens.accessToken),
-    notionConnected: !!req.user.notionAccessToken,
-    createdAt: req.user.createdAt
-  });
+  try {
+    // Ensure user object exists
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not found in session' });
+    }
+
+    // Return profile with null-safe access
+    res.json({
+      id: req.user._id,
+      username: req.user.username || '',
+      displayName: req.user.displayName || req.user.username || '',
+      email: req.user.email || '',
+      avatarUrl: req.user.avatarUrl || 'https://via.placeholder.com/150',
+      bio: req.user.bio || '',
+      location: req.user.location || '',
+      website: req.user.website || '',
+      preferences: req.user.preferences || {},
+      settings: req.user.settings || {},
+      githubConnected: !!(req.user.githubAccessToken),
+      googleConnected: !!(req.user.googleTokens && req.user.googleTokens.accessToken),
+      notionConnected: !!(req.user.notionAccessToken),
+      createdAt: req.user.createdAt || new Date()
+    });
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch profile',
+      message: process.env.NODE_ENV !== 'production' ? error.message : undefined
+    });
+  }
 });
 
 // Update user profile
 router.put('/profile', requireAuth, async (req, res) => {
   try {
+    // Ensure user object exists
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not found in session' });
+    }
+
     const { displayName, email, bio, location, website } = req.body;
     
-    // Update profile fields
+    // Update profile fields (with null checks)
     if (displayName !== undefined) req.user.displayName = displayName;
     if (email !== undefined) req.user.email = email;
     if (bio !== undefined) req.user.bio = bio;
@@ -46,23 +65,26 @@ router.put('/profile', requireAuth, async (req, res) => {
     
     res.json({
       id: req.user._id,
-      username: req.user.username,
-      displayName: req.user.displayName,
-      email: req.user.email,
-      avatarUrl: req.user.avatarUrl,
-      bio: req.user.bio,
-      location: req.user.location,
-      website: req.user.website,
-      preferences: req.user.preferences,
-      settings: req.user.settings,
-      githubConnected: !!req.user.githubAccessToken,
+      username: req.user.username || '',
+      displayName: req.user.displayName || req.user.username || '',
+      email: req.user.email || '',
+      avatarUrl: req.user.avatarUrl || 'https://via.placeholder.com/150',
+      bio: req.user.bio || '',
+      location: req.user.location || '',
+      website: req.user.website || '',
+      preferences: req.user.preferences || {},
+      settings: req.user.settings || {},
+      githubConnected: !!(req.user.githubAccessToken),
       googleConnected: !!(req.user.googleTokens && req.user.googleTokens.accessToken),
-      notionConnected: !!req.user.notionAccessToken,
-      createdAt: req.user.createdAt
+      notionConnected: !!(req.user.notionAccessToken),
+      createdAt: req.user.createdAt || new Date()
     });
   } catch (error) {
     console.error('Error updating profile:', error);
-    res.status(500).json({ error: 'Failed to update profile' });
+    res.status(500).json({ 
+      error: 'Failed to update profile',
+      message: process.env.NODE_ENV !== 'production' ? error.message : undefined
+    });
   }
 });
 

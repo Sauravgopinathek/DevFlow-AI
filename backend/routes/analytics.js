@@ -27,6 +27,7 @@ router.post('/track', trackLimiter, async (req, res) => {
     // Validate required fields
     if (!pageUrl || !sessionId) {
       return res.status(400).json({ 
+        success: false,
         error: 'pageUrl and sessionId are required' 
       });
     }
@@ -42,6 +43,15 @@ router.post('/track', trackLimiter, async (req, res) => {
 
     // Get userId if authenticated
     const userId = req.isAuthenticated() ? req.user._id : null;
+
+    // Check if Analytics model is available
+    if (!Analytics) {
+      console.warn('Analytics model not available');
+      return res.json({ 
+        success: false,
+        message: 'Analytics service temporarily unavailable (non-critical)' 
+      });
+    }
 
     // Create analytics record
     const analyticsRecord = new Analytics({
@@ -75,6 +85,14 @@ router.post('/track', trackLimiter, async (req, res) => {
 // Get analytics summary (admin only)
 router.get('/stats', requireAdmin, async (req, res) => {
   try {
+    // Check if models are available
+    if (!Analytics || !User) {
+      return res.status(503).json({ 
+        error: 'Analytics service temporarily unavailable',
+        message: 'Database connection required for analytics'
+      });
+    }
+
     const now = new Date();
     const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
@@ -187,7 +205,10 @@ router.get('/stats', requireAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Analytics stats error:', error);
-    res.status(500).json({ error: 'Failed to fetch analytics stats' });
+    res.status(500).json({ 
+      error: 'Failed to fetch analytics stats',
+      message: process.env.NODE_ENV !== 'production' ? error.message : undefined
+    });
   }
 });
 

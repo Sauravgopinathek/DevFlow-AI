@@ -6,6 +6,7 @@ const Profile = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
@@ -24,6 +25,7 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
+      setError(null);
       const response = await axios.get('/api/user/profile');
       setProfile(response.data);
       setEditForm({
@@ -35,7 +37,29 @@ const Profile = () => {
       });
     } catch (error) {
       console.error('Failed to fetch profile:', error);
-      setMessage({ type: 'error', text: 'Failed to load profile' });
+      setError('Failed to load profile. Using cached data from login.');
+      
+      // Fallback to user data from AuthContext if API fails
+      if (user) {
+        setProfile({
+          ...user,
+          bio: user.bio || '',
+          location: user.location || '',
+          website: user.website || ''
+        });
+        setEditForm({
+          displayName: user.displayName || '',
+          email: user.email || '',
+          bio: user.bio || '',
+          location: user.location || '',
+          website: user.website || ''
+        });
+      } else {
+        setMessage({ 
+          type: 'error', 
+          text: 'Failed to load profile. Please refresh the page.' 
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -100,9 +124,36 @@ const Profile = () => {
       <div className="min-h-screen bg-themed-primary py-8">
         <div className="max-w-4xl mx-auto px-4">
           <div className="card-themed animate-slide-up">
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-              <span className="ml-3 text-themed-secondary">Loading profile...</span>
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+              <span className="text-themed-secondary text-lg">Loading profile...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state with retry button if profile failed to load and no fallback data
+  if (!profile && error) {
+    return (
+      <div className="min-h-screen bg-themed-primary py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="card-themed animate-slide-up">
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h2 className="text-2xl font-bold text-themed-primary mb-2">
+                Failed to Load Profile
+              </h2>
+              <p className="text-themed-secondary mb-6">
+                {error || 'Unable to fetch your profile data. Please try again.'}
+              </p>
+              <button
+                onClick={fetchProfile}
+                className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105"
+              >
+                🔄 Retry
+              </button>
             </div>
           </div>
         </div>
@@ -113,6 +164,28 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-themed-primary py-8">
       <div className="max-w-4xl mx-auto px-4">
+        {/* Error Banner */}
+        {error && (
+          <div className="mb-6 bg-yellow-500 bg-opacity-10 border border-yellow-500 rounded-lg px-4 py-3 animate-slide-up">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-yellow-500 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-yellow-500 font-medium text-sm">
+                  ⚠️ {error}
+                </p>
+                <button
+                  onClick={fetchProfile}
+                  className="text-yellow-400 hover:text-yellow-300 underline text-sm mt-1"
+                >
+                  Try reloading profile data
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="card-themed animate-slide-up">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-3xl font-bold text-themed-primary flex items-center">

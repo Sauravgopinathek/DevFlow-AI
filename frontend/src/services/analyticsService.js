@@ -5,6 +5,9 @@ class AnalyticsService {
     this.sessionId = this.getOrCreateSessionId();
     this.queue = [];
     this.isOnline = navigator.onLine;
+    this.isEnabled = true; // Can be disabled if backend fails
+    this.failureCount = 0; // Track consecutive failures
+    this.maxFailures = 3; // Disable after 3 consecutive failures
     
     // Listen for online/offline events
     window.addEventListener('online', () => {
@@ -19,68 +22,130 @@ class AnalyticsService {
 
   // Get or create a session ID
   getOrCreateSessionId() {
-    let sessionId = sessionStorage.getItem('analytics_session_id');
-    if (!sessionId) {
-      sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-      sessionStorage.setItem('analytics_session_id', sessionId);
+    try {
+      let sessionId = sessionStorage.getItem('analytics_session_id');
+      if (!sessionId) {
+        sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+        sessionStorage.setItem('analytics_session_id', sessionId);
+      }
+      return sessionId;
+    } catch (error) {
+      // Fallback if sessionStorage is not available
+      return `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     }
-    return sessionId;
   }
 
   // Track a page view
   async trackPageView(pageUrl) {
-    return this.trackEvent('page_view', pageUrl, {
-      referrer: document.referrer,
-      title: document.title
-    });
+    // Silently fail if analytics is disabled
+    if (!this.isEnabled) {
+      return false;
+    }
+    
+    try {
+      return await this.trackEvent('page_view', pageUrl, {
+        referrer: document.referrer,
+        title: document.title
+      });
+    } catch (error) {
+      // Silently fail - analytics should never crash the app
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('Analytics trackPageView failed:', error.message);
+      }
+      return false;
+    }
   }
 
   // Track a custom event
   async trackEvent(eventType, pageUrl = window.location.pathname, eventData = {}) {
-    const event = {
-      pageUrl,
-      sessionId: this.sessionId,
-      eventType,
-      eventData: {
-        ...eventData,
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        screenResolution: `${window.screen.width}x${window.screen.height}`,
-        viewport: `${window.innerWidth}x${window.innerHeight}`
-      }
-    };
+    // Return early if analytics is disabled
+    if (!this.isEnabled) {
+      return false;
+    }
 
-    if (this.isOnline) {
-      try {
-        await axios.post('/api/analytics/track', event);
-        return true;
-      } catch (error) {
-        console.error('Analytics tracking failed:', error);
-        // Queue for later if network error
-        if (error.code === 'ERR_NETWORK') {
-          this.queue.push(event);
+    try {
+      const event = {
+        pageUrl,
+        sessionId: this.sessionId,
+        eventType,
+        eventData: {
+          ...eventData,
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          screenResolution: `${window.screen.width}x${window.screen.height}`,
+          viewport: `${window.innerWidth}x${window.innerHeight}`
         }
+      };
+
+      if (this.isOnline) {
+        try {
+          await axios.post('/api/analytics/track', event);
+          // Reset failure count on success
+          this.failureCount = 0;
+          return true;
+        } catch (error) {
+          // Increment failure count
+          this.failureCount++;
+          
+          // Disable analytics if we've had too many consecutive failures
+          if (this.failureCount >= this.maxFailures) {
+            this.isEnabled = false;
+            if (process.env.NODE_ENV !== 'production') {
+              console.debug('Analytics disabled after multiple failures');
+            }
+          }
+          
+          // Only log in development
+          if (process.env.NODE_ENV !== 'production') {
+            console.debug('Analytics tracking failed:', error.message);
+          }
+          
+          // Queue for later if network error (not server errors like 404, 500)
+          if (error.code === 'ERR_NETWORK' && this.isEnabled) {
+            this.queue.push(event);
+            this.saveQueue();
+          }
+          return false;
+        }
+      } else {
+        // Queue the event for later
+        this.queue.push(event);
+        this.saveQueue();
         return false;
       }
-    } else {
-      // Queue the event for later
-      this.queue.push(event);
-      this.saveQueue();
+    } catch (error) {
+      // Catch any unexpected errors
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('Analytics trackEvent error:', error.message);
+      }
       return false;
     }
   }
 
   // Track user action
   async trackAction(actionName, actionData = {}) {
-    return this.trackEvent('action', window.location.pathname, {
-      action: actionName,
-      ...actionData
-    });
+    // Silently fail if analytics is disabled
+    if (!this.isEnabled) {
+      return false;
+    }
+    
+    try {
+      return await this.trackEvent('action', window.location.pathname, {
+        action: actionName,
+        ...actionData
+      });
+    } catch (error) {
+      // Silently fail - analytics should never crash the app
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('Analytics trackAction failed:', error.message);
+      }
+      return false;
+    }
   }
 
   // Flush queued events
   async flushQueue() {
-    if (this.queue.length === 0) return;
+    if (this.queue.length === 0 || !this.isEnabled) return;
 
     const eventsToSend = [...this.queue];
     this.queue = [];
@@ -90,9 +155,12 @@ class AnalyticsService {
       try {
         await axios.post('/api/analytics/track', event);
       } catch (error) {
-        console.error('Failed to send queued event:', error);
-        // Re-queue if still failing
-        if (error.code === 'ERR_NETWORK') {
+        // Only log in development
+        if (process.env.NODE_ENV !== 'production') {
+          console.debug('Failed to send queued event:', error.message);
+        }
+        // Re-queue if still failing with network errors
+        if (error.code === 'ERR_NETWORK' && this.isEnabled) {
           this.queue.push(event);
         }
       }
@@ -104,7 +172,7 @@ class AnalyticsService {
     try {
       localStorage.setItem('analytics_queue', JSON.stringify(this.queue));
     } catch (error) {
-      console.error('Failed to save analytics queue:', error);
+      // Silently fail - don't log to avoid console spam
     }
   }
 
@@ -116,7 +184,7 @@ class AnalyticsService {
         this.queue = JSON.parse(saved);
       }
     } catch (error) {
-      console.error('Failed to load analytics queue:', error);
+      // Silently fail - don't log to avoid console spam
     }
   }
 
@@ -126,7 +194,9 @@ class AnalyticsService {
       const response = await axios.get('/api/analytics/stats');
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch analytics stats:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('Failed to fetch analytics stats:', error.message);
+      }
       throw error;
     }
   }
@@ -137,7 +207,9 @@ class AnalyticsService {
       const response = await axios.get(`/api/analytics/visitors?days=${days}`);
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch visitor count:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('Failed to fetch visitor count:', error.message);
+      }
       throw error;
     }
   }
@@ -148,7 +220,9 @@ class AnalyticsService {
       const response = await axios.get('/api/analytics/users');
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch user stats:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('Failed to fetch user stats:', error.message);
+      }
       throw error;
     }
   }
@@ -159,7 +233,9 @@ class AnalyticsService {
       const response = await axios.get(`/api/analytics/activity?page=${page}&limit=${limit}`);
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch activity timeline:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('Failed to fetch activity timeline:', error.message);
+      }
       throw error;
     }
   }
@@ -168,7 +244,11 @@ class AnalyticsService {
 // Create a singleton instance
 const analyticsService = new AnalyticsService();
 
-// Load any queued events
-analyticsService.loadQueue();
+// Load any queued events (wrapped in try-catch)
+try {
+  analyticsService.loadQueue();
+} catch (error) {
+  // Silently fail if loading queue fails
+}
 
 export default analyticsService;
