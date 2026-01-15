@@ -496,32 +496,70 @@ router.post('/generate-readme', requireAuth, async (req, res) => {
   try {
     const { repoName, repoDescription, language, owner, hasExistingReadme } = req.body;
 
-    // Get repository details for better README generation
-    let repoDetails = '';
+    // Fetch repository contents to analyze structure
+    let projectAnalysis = {
+      files: [],
+      hasPackageJson: false,
+      hasDockerfile: false,
+      hasTests: false,
+      hasSrc: false,
+      dependencies: {},
+      devDependencies: {},
+      scripts: {},
+      hasRequirements: false,
+      hasPomXml: false,
+      hasGoMod: false
+    };
+
     try {
-      const repoResponse = await axios.get(`https://api.github.com/repos/${owner}/${repoName}`, {
-        headers: { 'Authorization': `token ${req.user.githubAccessToken}` }
-      });
+      // Get repository contents
+      const contentsResponse = await axios.get(
+        `https://api.github.com/repos/${owner}/${repoName}/contents`,
+        { headers: { 'Authorization': `token ${req.user.githubAccessToken}` }}
+      );
 
-      // Get repository contents to understand structure
-      const contentsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repoName}/contents`, {
-        headers: { 'Authorization': `token ${req.user.githubAccessToken}` }
-      });
+      const files = contentsResponse.data;
+      projectAnalysis.files = files.map(f => f.name);
+      projectAnalysis.hasPackageJson = files.some(f => f.name === 'package.json');
+      projectAnalysis.hasDockerfile = files.some(f => f.name === 'Dockerfile');
+      projectAnalysis.hasTests = files.some(f => 
+        f.name === 'test' || f.name === 'tests' || 
+        f.name.includes('.test.') || f.name.includes('.spec.')
+      );
+      projectAnalysis.hasSrc = files.some(f => f.name === 'src');
+      projectAnalysis.hasRequirements = files.some(f => f.name === 'requirements.txt');
+      projectAnalysis.hasPomXml = files.some(f => f.name === 'pom.xml');
+      projectAnalysis.hasGoMod = files.some(f => f.name === 'go.mod');
 
-      const files = contentsResponse.data.map(item => item.name).join(', ');
-      repoDetails = `Repository has ${repoResponse.data.size}KB of code with files: ${files}`;
+      // Fetch package.json if exists (for Node.js/TypeScript projects)
+      if (projectAnalysis.hasPackageJson) {
+        try {
+          const pkgResponse = await axios.get(
+            `https://api.github.com/repos/${owner}/${repoName}/contents/package.json`,
+            { headers: { 'Authorization': `token ${req.user.githubAccessToken}` }}
+          );
+          const packageData = JSON.parse(
+            Buffer.from(pkgResponse.data.content, 'base64').toString()
+          );
+          projectAnalysis.dependencies = packageData.dependencies || {};
+          projectAnalysis.devDependencies = packageData.devDependencies || {};
+          projectAnalysis.scripts = packageData.scripts || {};
+        } catch (pkgError) {
+          console.log('Could not fetch package.json details');
+        }
+      }
     } catch (error) {
-      console.log('Could not fetch detailed repo info, using basic info');
+      console.log('Could not fetch detailed repo info, using basic template');
     }
 
-    // Generate README content using a simple template (in a real app, you'd use OpenAI or similar)
-    const readme = generateReadmeTemplate({
+    // Generate README based on actual project analysis
+    const readme = generateProjectSpecificReadme({
       repoName,
       repoDescription: repoDescription || 'A great project built with passion',
       language: language || 'JavaScript',
       owner,
       hasExistingReadme,
-      repoDetails
+      projectAnalysis
     });
 
     res.json({ readme });
@@ -595,66 +633,11 @@ router.get('/profile-stats', requireAuth, async (req, res) => {
     // Calculate total stars
     const totalStars = reposResponse.data.reduce((sum, repo) => sum + (repo.stargazers_count || 0), 0);
 
-    // Get recent activity (events)
-    const activityResponse = await axios.get(`https://api.github.com/users/${encodeURIComponent(req.user.username)}/events/public`, {
-      headers: {
-        'Authorization': `token ${req.user.githubAccessToken}`,
-        'Accept': 'application/vnd.github.v3+json'
-      },
-      params: { per_page: 3 }
-    }).catch(() => ({ data: [] }));
-
-    // Format recent activity
-    const recentActivity = activityResponse.data.slice(0, 3).map(event => {
-      let description = '';
-      let icon = '📝';
-      const repoName = event.repo?.name || 'a repository';
-
-      switch (event.type) {
-        case 'PushEvent':
-          description = `Pushed to ${repoName}`;
-          icon = '🚀';
-          break;
-        case 'PullRequestEvent':
-          description = `${event.payload?.action || 'updated'} PR in ${repoName}`;
-          icon = '🔀';
-          break;
-        case 'IssuesEvent':
-          description = `${event.payload?.action || 'updated'} issue in ${repoName}`;
-          icon = '🐛';
-          break;
-        case 'CreateEvent':
-          description = `Created ${event.payload?.ref_type || 'item'} in ${repoName}`;
-          icon = '✨';
-          break;
-        case 'WatchEvent':
-          description = `Starred ${repoName}`;
-          icon = '⭐';
-          break;
-        case 'ForkEvent':
-          description = `Forked ${repoName}`;
-          icon = '🍴';
-          break;
-        default:
-          description = `${event.type.replace('Event', '')} on ${repoName}`;
-          icon = '📝';
-      }
-
-      return {
-        type: event.type,
-        repo: event.repo?.name,
-        description,
-        icon,
-        created_at: event.created_at
-      };
-    });
-
     res.json({
       repos: userResponse.data.public_repos,
       stars: totalStars,
       followers: userResponse.data.followers,
-      following: userResponse.data.following,
-      recentActivity
+      following: userResponse.data.following
     });
   } catch (error) {
     console.error('Error fetching profile stats:', error.response?.data || error.message);
@@ -663,19 +646,107 @@ router.get('/profile-stats', requireAuth, async (req, res) => {
 });
 
 // Helper function to generate README template
-function generateReadmeTemplate({ repoName, repoDescription, language, owner, hasExistingReadme, repoDetails }) {
+function generateProjectSpecificReadme({ repoName, repoDescription, language, owner, hasExistingReadme, projectAnalysis }) {
   const languageSetup = getLanguageSetup(language);
+  
+  // Build features section based on actual project
+  let featuresSection = '## 🚀 Features\n\n';
+  if (projectAnalysis.dependencies && Object.keys(projectAnalysis.dependencies).length > 0) {
+    featuresSection += `- Built with ${language}\n`;
+    const majorDeps = Object.keys(projectAnalysis.dependencies).slice(0, 5);
+    if (majorDeps.length > 0) {
+      featuresSection += `- Uses ${majorDeps.join(', ')}\n`;
+    }
+  } else {
+    featuresSection += `- Modern ${language} development\n`;
+  }
+  featuresSection += '- Clean and maintainable code\n';
+  if (projectAnalysis.hasTests) {
+    featuresSection += '- Comprehensive test coverage\n';
+  }
+  if (projectAnalysis.hasDockerfile) {
+    featuresSection += '- Docker support for easy deployment\n';
+  }
+  
+  // Build installation section
+  let installSection = '## 🔧 Installation\n\n';
+  installSection += '1. Clone the repository:\n```bash\n';
+  installSection += `git clone https://github.com/${owner}/${repoName}.git\n`;
+  installSection += `cd ${repoName}\n\`\`\`\n\n`;
+  installSection += '2. Install dependencies:\n```bash\n';
+  installSection += `${languageSetup.install}\n\`\`\`\n\n`;
+  
+  // Add Docker setup if Dockerfile exists
+  if (projectAnalysis.hasDockerfile) {
+    installSection += '### 🐳 Docker Setup\n\n';
+    installSection += '```bash\n';
+    installSection += 'docker build -t ' + repoName.toLowerCase() + ' .\n';
+    installSection += 'docker run -p 3000:3000 ' + repoName.toLowerCase() + '\n';
+    installSection += '```\n\n';
+  }
+  
+  // Build usage section with actual scripts
+  let usageSection = '## 🎯 Usage\n\n';
+  if (projectAnalysis.scripts && Object.keys(projectAnalysis.scripts).length > 0) {
+    usageSection += 'Available scripts:\n\n';
+    Object.entries(projectAnalysis.scripts).forEach(([name, cmd]) => {
+      usageSection += `**${name}**\n`;
+      usageSection += '```bash\n';
+      if (projectAnalysis.hasPackageJson) {
+        usageSection += `npm run ${name}\n`;
+      } else {
+        // For other project types, just show the command as-is
+        usageSection += `${cmd}\n`;
+      }
+      usageSection += '```\n\n';
+    });
+  } else {
+    // Fallback to language-specific usage instructions
+    usageSection += languageSetup.usage + '\n\n';
+  }
+  
+  // Build project structure section based on actual files
+  let structureSection = '## 🏗️ Project Structure\n\n```\n';
+  structureSection += `${repoName}/\n`;
+  if (projectAnalysis.hasSrc) {
+    structureSection += '├── src/                 # Source files\n';
+  }
+  if (projectAnalysis.hasTests) {
+    structureSection += '├── tests/              # Test files\n';
+  }
+  if (projectAnalysis.hasPackageJson) {
+    structureSection += '├── package.json        # Project dependencies\n';
+  }
+  if (projectAnalysis.hasRequirements) {
+    structureSection += '├── requirements.txt    # Python dependencies\n';
+  }
+  if (projectAnalysis.hasPomXml) {
+    structureSection += '├── pom.xml            # Maven configuration\n';
+  }
+  if (projectAnalysis.hasGoMod) {
+    structureSection += '├── go.mod             # Go module definition\n';
+  }
+  if (projectAnalysis.hasDockerfile) {
+    structureSection += '├── Dockerfile         # Docker configuration\n';
+  }
+  structureSection += '└── README.md          # This file\n```\n\n';
+  
+  // Build testing section if tests exist
+  let testingSection = '';
+  if (projectAnalysis.hasTests) {
+    testingSection = '## 🧪 Testing\n\n';
+    if (projectAnalysis.scripts && projectAnalysis.scripts.test) {
+      testingSection += 'Run tests:\n```bash\nnpm test\n```\n\n';
+    } else {
+      testingSection += 'Tests are available in the `tests/` directory.\n\n';
+    }
+  }
   
   return `# ${repoName}
 
 ${repoDescription}
 
-## 🚀 Features
-
-- Modern ${language} development
-- Clean and maintainable code
-- Easy to set up and use
-- Well-documented API
+${featuresSection}
 
 ## 📋 Prerequisites
 
@@ -683,33 +754,13 @@ Before you begin, ensure you have met the following requirements:
 
 ${languageSetup.prerequisites}
 
-## 🔧 Installation
+${installSection}
 
-1. Clone the repository:
-\`\`\`bash
-git clone https://github.com/${owner}/${repoName}.git
-cd ${repoName}
-\`\`\`
+${usageSection}
 
-2. Install dependencies:
-\`\`\`bash
-${languageSetup.install}
-\`\`\`
+${structureSection}
 
-## 🎯 Usage
-
-${languageSetup.usage}
-
-## 🏗️ Project Structure
-
-\`\`\`
-${repoName}/
-├── src/                 # Source files
-├── tests/              # Test files
-├── docs/               # Documentation
-├── ${languageSetup.configFile}
-└── README.md           # This file
-\`\`\`
+${testingSection}
 
 ## 🤝 Contributing
 

@@ -25,16 +25,23 @@ const initializeTheme = () => {
 
 export const SettingsProvider = ({ children }) => {
   // Initialize theme immediately
-  const initialTheme = initializeTheme();
+  initializeTheme();
   
   const getInitialSettings = () => {
     try {
       const localSettings = localStorage.getItem('devflow-settings');
       if (localSettings) {
         const parsed = JSON.parse(localSettings);
-        // Ensure theme matches what we initialized
-        parsed.preferences.theme = initialTheme;
-        return parsed;
+        // Ensure theme is always dark
+        return {
+          notifications: parsed.notifications || {
+            email: true,
+            push: false
+          },
+          integrations: parsed.integrations || {
+            github: false
+          }
+        };
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -44,12 +51,6 @@ export const SettingsProvider = ({ children }) => {
       notifications: {
         email: true,
         push: false
-      },
-      preferences: {
-        theme: 'dark',
-        timezone: 'UTC',
-        language: 'en',
-        autoSync: true
       },
       integrations: {
         github: false
@@ -76,10 +77,12 @@ export const SettingsProvider = ({ children }) => {
         const response = await axios.get('/api/user/settings');
         if (response.data.settings) {
           const serverSettings = {
-            ...response.data.settings,
-            preferences: {
-              ...response.data.settings.preferences,
-              theme: 'dark' // Always use dark theme
+            notifications: response.data.settings.notifications || {
+              email: true,
+              push: false
+            },
+            integrations: response.data.settings.integrations || {
+              github: false
             }
           };
           
@@ -98,20 +101,11 @@ export const SettingsProvider = ({ children }) => {
 
   const updateSettings = async (newSettings) => {
     try {
-      // Force dark theme
-      const settingsWithDarkTheme = {
-        ...newSettings,
-        preferences: {
-          ...newSettings.preferences,
-          theme: 'dark'
-        }
-      };
-      
-      setSettings(settingsWithDarkTheme);
-      localStorage.setItem('devflow-settings', JSON.stringify(settingsWithDarkTheme));
+      setSettings(newSettings);
+      localStorage.setItem('devflow-settings', JSON.stringify(newSettings));
       
       try {
-        await axios.put('/api/user/settings', { settings: settingsWithDarkTheme });
+        await axios.put('/api/user/settings', { settings: newSettings });
         return { success: true };
       } catch (serverError) {
         return { success: true, local: true };
@@ -120,17 +114,6 @@ export const SettingsProvider = ({ children }) => {
       console.error('Failed to update settings:', error);
       return { success: false, error: error.message };
     }
-  };
-
-  const applyTheme = () => {
-    // Always apply dark theme
-    const html = document.documentElement;
-    html.classList.add('dark');
-  };
-
-  const applyLanguage = (language) => {
-    document.documentElement.lang = language;
-    // You can add more language-specific logic here
   };
 
   const showNotification = (message, type = 'info') => {
@@ -161,34 +144,12 @@ export const SettingsProvider = ({ children }) => {
     }
   };
 
-  const formatTime = (date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      timeZone: settings.preferences.timezone,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    }).format(date);
-  };
-
-  const formatDate = (date) => {
-    return new Intl.DateTimeFormat(settings.preferences.language, {
-      timeZone: settings.preferences.timezone,
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }).format(date);
-  };
-
   const value = {
     settings,
     loading,
     updateSettings,
     showNotification,
-    formatTime,
-    formatDate,
     // Helper functions
-    isDarkMode: true,
-    isAutoSync: settings.preferences.autoSync,
     emailNotifications: settings.notifications.email,
     pushNotifications: settings.notifications.push
   };
