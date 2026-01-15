@@ -32,9 +32,16 @@ export const SettingsProvider = ({ children }) => {
       const localSettings = localStorage.getItem('devflow-settings');
       if (localSettings) {
         const parsed = JSON.parse(localSettings);
-        // Ensure theme matches what we initialized
-        parsed.preferences.theme = initialTheme;
-        return parsed;
+        // Ensure theme is always dark
+        return {
+          notifications: parsed.notifications || {
+            email: true,
+            push: false
+          },
+          integrations: parsed.integrations || {
+            github: false
+          }
+        };
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -44,12 +51,6 @@ export const SettingsProvider = ({ children }) => {
       notifications: {
         email: true,
         push: false
-      },
-      preferences: {
-        theme: 'dark',
-        timezone: 'UTC',
-        language: 'en',
-        autoSync: true
       },
       integrations: {
         github: false
@@ -76,10 +77,12 @@ export const SettingsProvider = ({ children }) => {
         const response = await axios.get('/api/user/settings');
         if (response.data.settings) {
           const serverSettings = {
-            ...response.data.settings,
-            preferences: {
-              ...response.data.settings.preferences,
-              theme: 'dark' // Always use dark theme
+            notifications: response.data.settings.notifications || {
+              email: true,
+              push: false
+            },
+            integrations: response.data.settings.integrations || {
+              github: false
             }
           };
           
@@ -161,34 +164,13 @@ export const SettingsProvider = ({ children }) => {
     }
   };
 
-  const formatTime = (date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      timeZone: settings.preferences.timezone,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    }).format(date);
-  };
-
-  const formatDate = (date) => {
-    return new Intl.DateTimeFormat(settings.preferences.language, {
-      timeZone: settings.preferences.timezone,
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }).format(date);
-  };
-
   const value = {
     settings,
     loading,
     updateSettings,
     showNotification,
-    formatTime,
-    formatDate,
     // Helper functions
     isDarkMode: true,
-    isAutoSync: settings.preferences.autoSync,
     emailNotifications: settings.notifications.email,
     pushNotifications: settings.notifications.push
   };

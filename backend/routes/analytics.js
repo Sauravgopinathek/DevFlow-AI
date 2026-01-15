@@ -181,6 +181,15 @@ router.get('/stats', requireAdmin, async (req, res) => {
       }
     ]);
 
+    // Log analytics stats to confirm real data from MongoDB
+    console.log('📊 Analytics Stats:', {
+      totalUsers,
+      approvedUsers,
+      uniqueVisitors: uniqueVisitors7d.length,
+      totalPageViews,
+      source: 'MongoDB - Real Data'
+    });
+
     res.json({
       users: {
         total: totalUsers,

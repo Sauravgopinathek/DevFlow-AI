@@ -95,12 +95,6 @@ router.get('/settings', requireAuth, (req, res) => {
       notifications: {
         email: true,
         push: false
-      },
-      preferences: {
-        theme: 'light',
-        timezone: 'UTC',
-        language: 'en',
-        autoSync: true
       }
     }
   });
@@ -120,12 +114,6 @@ router.put('/settings', requireAuth, async (req, res) => {
       notifications: {
         email: settings.notifications?.email !== undefined ? settings.notifications.email : req.user.settings?.notifications?.email || true,
         push: settings.notifications?.push !== undefined ? settings.notifications.push : req.user.settings?.notifications?.push || false
-      },
-      preferences: {
-        theme: settings.preferences?.theme || req.user.settings?.preferences?.theme || 'light',
-        timezone: settings.preferences?.timezone || req.user.settings?.preferences?.timezone || 'UTC',
-        language: settings.preferences?.language || req.user.settings?.preferences?.language || 'en',
-        autoSync: settings.preferences?.autoSync !== undefined ? settings.preferences.autoSync : req.user.settings?.preferences?.autoSync || true
       }
     };
     

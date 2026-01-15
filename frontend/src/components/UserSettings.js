@@ -12,18 +12,11 @@ const UserSettings = () => {
     notifications: {
       email: true,
       push: false
-    },
-    preferences: {
-      theme: 'light',
-      timezone: 'UTC',
-      language: 'en',
-      autoSync: true
     }
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
-  const [activeTab, setActiveTab] = useState('preferences');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleteChecks, setDeleteChecks] = useState({
@@ -223,30 +216,6 @@ const UserSettings = () => {
 
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex space-x-4 justify-center mb-8">
-        <button
-          onClick={() => setActiveTab('preferences')}
-          className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 ${
-            activeTab === 'preferences'
-              ? 'bg-blue-600 dark:bg-blue-500 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-        >
-          ⚙️ Preferences
-        </button>
-        <button
-          onClick={() => setActiveTab('danger')}
-          className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 ${
-            activeTab === 'danger'
-              ? 'bg-red-600 dark:bg-red-500 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-        >
-          🚨 Danger Zone
-        </button>
-      </div>
-
       {message && (
         <div className={`mb-4 px-4 py-3 rounded-lg ${
           message.type === 'success' 
@@ -257,104 +226,12 @@ const UserSettings = () => {
         </div>
       )}
 
-      {/* Preferences Tab */}
-      {activeTab === 'preferences' && (
-        <div className="space-y-6">
-          <h4 className="text-lg font-semibold text-themed-primary mb-4">User Preferences</h4>
-          
-          <div className="space-y-4">
-            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <label className="flex items-center justify-between">
-                <div>
-                  <h5 className="font-medium text-themed-primary">Theme</h5>
-                  <p className="text-sm text-themed-secondary">Choose your preferred theme</p>
-                </div>
-                <select
-                  value={settings.preferences.theme}
-                  onChange={(e) => handleSettingChange('preferences', 'theme', e.target.value)}
-                  className="px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-themed-primary"
-                >
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                  <option value="auto">Auto</option>
-                </select>
-              </label>
-            </div>
-
-            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <label className="flex items-center justify-between">
-                <div>
-                  <h5 className="font-medium text-themed-primary">Language</h5>
-                  <p className="text-sm text-themed-secondary">Select your language</p>
-                </div>
-                <select
-                  value={settings.preferences.language}
-                  onChange={(e) => handleSettingChange('preferences', 'language', e.target.value)}
-                  className="px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-themed-primary"
-                >
-                  <option value="en">English</option>
-                  <option value="es">Español</option>
-                  <option value="fr">Français</option>
-                  <option value="de">Deutsch</option>
-                </select>
-              </label>
-            </div>
-
-            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <label className="flex items-center justify-between">
-                <div>
-                  <h5 className="font-medium text-themed-primary">Timezone</h5>
-                  <p className="text-sm text-themed-secondary">Your local timezone</p>
-                </div>
-                <select
-                  value={settings.preferences.timezone}
-                  onChange={(e) => handleSettingChange('preferences', 'timezone', e.target.value)}
-                  className="px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-themed-primary"
-                >
-                  <option value="UTC">UTC</option>
-                  <option value="America/New_York">Eastern Time</option>
-                  <option value="America/Chicago">Central Time</option>
-                  <option value="America/Los_Angeles">Pacific Time</option>
-                  <option value="Europe/London">London</option>
-                </select>
-              </label>
-            </div>
-
-            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <label className="flex items-center justify-between">
-                <div>
-                  <h5 className="font-medium text-themed-primary">Auto Sync</h5>
-                  <p className="text-sm text-themed-secondary">Automatically sync data</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={settings.preferences.autoSync}
-                  onChange={(e) => handleSettingChange('preferences', 'autoSync', e.target.checked)}
-                  className="w-5 h-5"
-                />
-              </label>
-            </div>
-          </div>
-
-          {hasUnsavedChanges && (
-            <button
-              onClick={saveSettings}
-              disabled={saving}
-              className="w-full bg-blue-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-300 disabled:opacity-50"
-            >
-              {saving ? 'Saving...' : 'Save Preferences'}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Danger Zone Tab */}
-      {activeTab === 'danger' && (
-        <div className="space-y-6">
-          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
-            <h3 className="text-xl font-bold text-red-800 mb-4 flex items-center">
-              <span className="text-3xl mr-2">⚠️</span> Delete Account
-            </h3>
+      {/* Danger Zone - Account Deletion */}
+      <div className="space-y-6">
+        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
+          <h3 className="text-xl font-bold text-red-800 mb-4 flex items-center">
+            <span className="text-3xl mr-2">⚠️</span> Delete Account
+          </h3>
             
             <div className="mb-6">
               <p className="text-red-700 mb-4 font-semibold">
@@ -530,7 +407,7 @@ const UserSettings = () => {
             <p className="text-red-600">Irreversible actions that affect your account.</p>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Final Confirmation Modal */}
       {showFinalModal && (
