@@ -175,24 +175,6 @@ const Navbar = () => {
                           </div>
                         ) : null}
 
-                        {/* Recent Activity */}
-                        {profileStats && profileStats.recentActivity && profileStats.recentActivity.length > 0 && (
-                          <div className="p-4 bg-white bg-opacity-5 border-b border-white border-opacity-10">
-                            <h4 className="text-white text-sm font-semibold mb-2">Recent Activity</h4>
-                            <div className="space-y-2">
-                              {profileStats.recentActivity.map((activity, index) => (
-                                <div key={index} className="flex items-start space-x-2 text-xs">
-                                  <span className="text-base">{activity.icon}</span>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-white text-opacity-90 truncate">{activity.description}</p>
-                                    <p className="text-white text-opacity-60">{timeAgo(activity.created_at)}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
                         {/* Navigation Links */}
                         <div className="py-2">
                           <Link
