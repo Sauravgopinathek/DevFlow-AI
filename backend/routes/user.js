@@ -28,7 +28,6 @@ router.get('/profile', requireAuth, (req, res) => {
       bio: req.user.bio || '',
       location: req.user.location || '',
       website: req.user.website || '',
-      preferences: req.user.preferences || {},
       settings: req.user.settings || {},
       githubConnected: !!(req.user.githubAccessToken),
       googleConnected: !!(req.user.googleTokens && req.user.googleTokens.accessToken),
@@ -72,7 +71,6 @@ router.put('/profile', requireAuth, async (req, res) => {
       bio: req.user.bio || '',
       location: req.user.location || '',
       website: req.user.website || '',
-      preferences: req.user.preferences || {},
       settings: req.user.settings || {},
       githubConnected: !!(req.user.githubAccessToken),
       googleConnected: !!(req.user.googleTokens && req.user.googleTokens.accessToken),
@@ -125,23 +123,6 @@ router.put('/settings', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error updating settings:', error);
     res.status(500).json({ error: 'Failed to update settings' });
-  }
-});
-
-// Update user preferences
-router.put('/preferences', requireAuth, async (req, res) => {
-  try {
-    const { autoSync, syncInterval } = req.body;
-    
-    req.user.preferences = {
-      autoSync: autoSync !== undefined ? autoSync : req.user.preferences.autoSync,
-      syncInterval: syncInterval !== undefined ? syncInterval : req.user.preferences.syncInterval
-    };
-    
-    await req.user.save();
-    res.json({ message: 'Preferences updated', preferences: req.user.preferences });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update preferences' });
   }
 });
 

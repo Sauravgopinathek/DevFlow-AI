@@ -101,20 +101,11 @@ export const SettingsProvider = ({ children }) => {
 
   const updateSettings = async (newSettings) => {
     try {
-      // Force dark theme
-      const settingsWithDarkTheme = {
-        ...newSettings,
-        preferences: {
-          ...newSettings.preferences,
-          theme: 'dark'
-        }
-      };
-      
-      setSettings(settingsWithDarkTheme);
-      localStorage.setItem('devflow-settings', JSON.stringify(settingsWithDarkTheme));
+      setSettings(newSettings);
+      localStorage.setItem('devflow-settings', JSON.stringify(newSettings));
       
       try {
-        await axios.put('/api/user/settings', { settings: settingsWithDarkTheme });
+        await axios.put('/api/user/settings', { settings: newSettings });
         return { success: true };
       } catch (serverError) {
         return { success: true, local: true };
