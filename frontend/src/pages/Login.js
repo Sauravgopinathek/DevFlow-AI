@@ -42,7 +42,7 @@ const Login = () => {
     <div className={`min-h-screen ${
       isDarkMode 
         ? 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900' 
-        : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'
+        : 'bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-100'
     }`}>
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
