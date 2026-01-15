@@ -190,11 +190,13 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Check if user is approved
+    // ✅ OPEN SOURCE: All users auto-approved - no status check needed
+    // Auto-upgrade any legacy pending users to approved status (one-time operation)
     if (user.registrationStatus !== 'approved') {
-      return res.status(401).json({ 
-        error: 'Account not approved yet' 
-      });
+      user.registrationStatus = 'approved';
+      user.approvedAt = user.approvedAt || new Date();
+      await user.save();
+      console.log(`✅ Auto-upgraded user ${user.username} to approved status`);
     }
 
     // Verify password

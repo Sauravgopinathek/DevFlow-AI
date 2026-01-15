@@ -38,8 +38,8 @@ passport.use(new GitHubStrategy({
             return done(null, user);
         }
 
-        // ✅ AUTO-APPROVAL: All new users are automatically approved
-        // No whitelist checking - open for any GitHub user
+        // ✅ OPEN SOURCE: All GitHub users auto-approved immediately
+        // No whitelist, no manual approval process - accessible worldwide
         user = new User({
             githubId: profile.id,
             username: githubUsername,

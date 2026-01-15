@@ -23,7 +23,7 @@ router.get('/github/callback',
         return res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
       }
       
-      // All users are now auto-approved, no need to check status
+      // ✅ OPEN SOURCE: All users auto-approved - no status check needed
       
       req.logIn(user, (err) => {
         if (err) {
