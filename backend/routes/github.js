@@ -690,18 +690,18 @@ function generateProjectSpecificReadme({ repoName, repoDescription, language, ow
   if (projectAnalysis.scripts && Object.keys(projectAnalysis.scripts).length > 0) {
     usageSection += 'Available scripts:\n\n';
     Object.entries(projectAnalysis.scripts).forEach(([name, cmd]) => {
-      usageSection += `**${name}**: ${cmd}\n`;
+      usageSection += `**${name}**\n`;
       usageSection += '```bash\n';
       if (projectAnalysis.hasPackageJson) {
         usageSection += `npm run ${name}\n`;
-      } else if (projectAnalysis.hasRequirements) {
-        usageSection += `python ${cmd}\n`;
       } else {
+        // For other project types, just show the command as-is
         usageSection += `${cmd}\n`;
       }
       usageSection += '```\n\n';
     });
   } else {
+    // Fallback to language-specific usage instructions
     usageSection += languageSetup.usage + '\n\n';
   }
   

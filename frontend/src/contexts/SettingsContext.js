@@ -150,7 +150,6 @@ export const SettingsProvider = ({ children }) => {
     updateSettings,
     showNotification,
     // Helper functions
-    isDarkMode: true,
     emailNotifications: settings.notifications.email,
     pushNotifications: settings.notifications.push
   };
