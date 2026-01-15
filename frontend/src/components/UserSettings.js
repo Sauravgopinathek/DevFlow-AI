@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useSettings } from '../contexts/SettingsContext';
 import axios from 'axios';
 
 const UserSettings = () => {
   const { user, logout } = useAuth();
-  const { updateSettings: updateGlobalSettings, showNotification } = useSettings();
   const navigate = useNavigate();
   const [settings, setSettings] = useState({
     notifications: {
@@ -27,8 +25,6 @@ const UserSettings = () => {
     proceed: false
   });
   const [showFinalModal, setShowFinalModal] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [originalSettings, setOriginalSettings] = useState(null);
 
   useEffect(() => {
     fetchSettings();
@@ -48,8 +44,6 @@ const UserSettings = () => {
           ...response.data.settings
         };
         setSettings(newSettings);
-        setOriginalSettings(JSON.parse(JSON.stringify(newSettings))); // Deep copy
-        setHasUnsavedChanges(false);
       }
     } catch (error) {
       console.error('❌ Failed to fetch settings:', error);
@@ -144,58 +138,6 @@ const UserSettings = () => {
     setTimeout(() => setMessage(null), 3000);
   };
 
-  const saveSettings = async () => {
-    setSaving(true);
-    setMessage(null);
-    
-    try {
-      console.log('💾 Saving settings:', settings);
-      
-      // Update both local state and global settings context
-      const result = await updateGlobalSettings(settings);
-      
-      if (result.success) {
-        console.log('✅ Save response:', result.data);
-        setMessage({ type: 'success', text: 'Settings saved successfully!' });
-        setOriginalSettings(JSON.parse(JSON.stringify(settings))); // Deep copy
-        setHasUnsavedChanges(false);
-        
-        // Show notification if enabled
-        showNotification('Settings saved successfully!', 'success');
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      console.error('❌ Failed to save settings:', error);
-      setMessage({ type: 'error', text: 'Failed to save settings. Please try again.' });
-    } finally {
-      setSaving(false);
-      setTimeout(() => setMessage(null), 3000);
-    }
-  };
-
-  const handleSettingChange = (category, key, value) => {
-    console.log(`🔧 Setting change: ${category}.${key} = ${value}`);
-    setSettings(prev => {
-      const newSettings = {
-        ...prev,
-        [category]: {
-          ...prev[category],
-          [key]: value
-        }
-      };
-      console.log('📝 New settings state:', newSettings);
-      
-      // Check if settings have changed
-      if (originalSettings) {
-        const hasChanges = JSON.stringify(newSettings) !== JSON.stringify(originalSettings);
-        setHasUnsavedChanges(hasChanges);
-      }
-      
-      return newSettings;
-    });
-  };
-
   if (loading) {
     return (
       <div className="card-colorful animate-slide-up">
@@ -208,30 +150,31 @@ const UserSettings = () => {
   }
 
   return (
-    <div className="card-themed rounded-2xl shadow-2xl p-8 animate-slide-up">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold text-themed-primary flex items-center">
-          ⚙️ Settings
-        </h3>
-
-      </div>
-
-      {message && (
-        <div className={`mb-4 px-4 py-3 rounded-lg ${
-          message.type === 'success' 
-            ? 'bg-green-100 border border-green-400 text-green-700' 
-            : 'bg-red-100 border border-red-400 text-red-700'
-        }`}>
-          {message.text}
-        </div>
-      )}
-
-      {/* Danger Zone - Account Deletion */}
-      <div className="space-y-6">
-        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
-          <h3 className="text-xl font-bold text-red-800 mb-4 flex items-center">
-            <span className="text-3xl mr-2">⚠️</span> Delete Account
+    <>
+      <div className="card-themed rounded-2xl shadow-2xl p-8 animate-slide-up">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-themed-primary flex items-center">
+            ⚙️ Settings
           </h3>
+
+        </div>
+
+        {message && (
+          <div className={`mb-4 px-4 py-3 rounded-lg ${
+            message.type === 'success' 
+              ? 'bg-green-100 border border-green-400 text-green-700' 
+              : 'bg-red-100 border border-red-400 text-red-700'
+          }`}>
+            {message.text}
+          </div>
+        )}
+
+        {/* Danger Zone - Account Deletion */}
+        <div className="space-y-6">
+          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
+            <h3 className="text-xl font-bold text-red-800 mb-4 flex items-center">
+              <span className="text-3xl mr-2">⚠️</span> Delete Account
+            </h3>
             
             <div className="mb-6">
               <p className="text-red-700 mb-4 font-semibold">
@@ -449,7 +392,7 @@ const UserSettings = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

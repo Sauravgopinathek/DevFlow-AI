@@ -25,7 +25,7 @@ const initializeTheme = () => {
 
 export const SettingsProvider = ({ children }) => {
   // Initialize theme immediately
-  const initialTheme = initializeTheme();
+  initializeTheme();
   
   const getInitialSettings = () => {
     try {
@@ -123,17 +123,6 @@ export const SettingsProvider = ({ children }) => {
       console.error('Failed to update settings:', error);
       return { success: false, error: error.message };
     }
-  };
-
-  const applyTheme = () => {
-    // Always apply dark theme
-    const html = document.documentElement;
-    html.classList.add('dark');
-  };
-
-  const applyLanguage = (language) => {
-    document.documentElement.lang = language;
-    // You can add more language-specific logic here
   };
 
   const showNotification = (message, type = 'info') => {
